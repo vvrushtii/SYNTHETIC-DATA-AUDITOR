@@ -1,0 +1,18 @@
+# Never commit data: uploads are processed in the browser and must not end up in Git.
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.parquet
+uploads/
+data/
+
+# Secrets and local config (the site needs none today)
+.env
+.env.*
+!.env.example
+
+# Tooling
+.vercel/
+node_modules/
+.DS_Store
