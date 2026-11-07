@@ -1,84 +1,46 @@
-# Synthetic Data Auditor
+# Evaluation pipeline (Python)
 
-Audit a synthetic dataset against its real source: data validation, fidelity, utility, privacy tests, ensemble risk, governance mapping and a downloadable report.
+One script runs the project's whole method for a dataset and writes one JSON result file.
 
-**Everything runs in the visitor's browser.** Uploaded CSVs are never sent to a server; there is no backend, database or API key.
-
-## Architecture
-
-| Part | Where it runs | File |
+| Step | What runs | Same as the project notebooks? |
 |---|---|---|
-| Dashboard (all pages) | Browser | `index.html` |
-| Component runtime (includes React, MIT licence) | Browser | `support.js` |
-| Validation, cleaning, fidelity, utility (TRTR vs TSTR), membership inference, exact-match test, ensemble risk | Browser | `engine.js` |
-| Compliance knowledge base and mapper | Browser | `kb.js` |
-| PDF, HTML, CSV and JSON report generation | Browser | `export.js` |
-| Results → page view-model | Browser | `view.js` |
-| Theme switch, search palette, chart tooltips | Browser | `fx.js` |
-| Hosting config (security headers) | Vercel | `vercel.json` |
+| Clean | trim text, `?`/empty → missing, strip trailing `.` from labels (Adult), drop configured ID columns, drop exact duplicates | Adds the label fix and duplicate removal |
+| Split | 80% members / 20% holdout, `random_state=42`, stratified on the target | Yes (the MIA notebooks' split) |
+| Generate | SDV `GaussianCopulaSynthesizer(enforce_min_max_values=True, enforce_rounding=True)` fitted on **members only**, `len(members)` rows | Yes (the MIA notebooks' generator) |
+| Fidelity | SDMetrics QualityReport + mean absolute correlation difference (upper triangle) | Yes; metadata now built explicitly, so it no longer fails on SDV 2.x |
+| Utility | Random forest, 100 trees, seed 42. TRTR = train on members, TSTR = train on synthetic, **both tested on the holdout** | Fixes leakage: the notebooks' test rows were also in the generator's training data |
+| Privacy | 6 attacks, holdout = non-members / control set | Distance MIA as before, plus 5 more |
 
-There is no build step, so this folder is deployed as it is.
+## The six attacks
 
-**Data handling**
-- Uploaded files are read in memory only and cleared when the tab is closed or reloaded.
-- Audit results (metrics only, not rows) are saved in the visitor's own browser storage (`localStorage`, keys `sda.v1.*`). Visitors can delete an audit from the Reports page or clear site data.
-- `.gitignore` blocks `*.csv`, `*.xlsx` and other data files so datasets can't be committed by mistake.
+| Attack | Method | Reported as |
+|---|---|---|
+| Distance MIA | Distance from each real record to its nearest synthetic record (standardised numeric + one-hot) | ROC-AUC with bootstrap 95% CI, TPR at 10% FPR |
+| Exact match | Share of member rows reproduced exactly, compared with holdout rows (chance level) | % and excess over holdout |
+| Shadow-model MIA | Attacker knows the generator and settings and holds half of the holdout. Six shadow GaussianCopulas trained on random halves of that pool; distance features; gradient-boosting classifier | ROC-AUC with 95% CI |
+| Singling-out | Anonymeter `SinglingOutEvaluator`, univariate and multivariate (4 columns) | Risk with 95% CI |
+| Linkability | Anonymeter `LinkabilityEvaluator`; non-target columns split into two halves | Risk with 95% CI |
+| Attribute inference | Anonymeter `InferenceEvaluator`; each sensitive column guessed from all others | Risk per column and the maximum |
 
-**Environment variables:** none needed. (A future Python backend would add an API address variable; see "Next steps".)
+AUC 0.5 means the attacker does no better than guessing. Anonymeter risk is attack success above the control-set success, so 0 means no measurable leak.
 
-## Run locally
-
-```bash
-python3 -m http.server 8000
-```
-
-Run that in this folder, then open http://localhost:8000. Opening `index.html` directly from the file system won't work; it must be served.
-
-## Deploy to Vercel
-
-### Option 1: from GitHub (recommended, auto-redeploys on every push)
-
-1. Create a new **empty** GitHub repository (for example `synthetic-data-auditor`).
-2. Upload the **contents of this `website` folder** to it: on the repository page choose *Add file → Upload files* and drag in every file here, including `.gitignore` and `vercel.json`. Do not upload any dataset folders. `.gitignore` is hidden in Finder: press **Cmd + Shift + .** to show it.
-3. Go to https://vercel.com/new, choose **Import Git Repository**, and pick the repository.
-4. In the import screen, set:
-   - **Framework Preset:** `Other`
-   - **Root Directory:** `./` (or `website` if you uploaded the whole project folder)
-   - **Build Command:** leave empty / off
-   - **Output Directory:** leave empty (`.`)
-   - **Environment Variables:** none
-5. Click **Deploy**. Vercel gives you a public address like `https://synthetic-data-auditor.vercel.app`.
-
-### Option 2: Vercel command-line tool
+## Run
 
 ```bash
-npm i -g vercel
-vercel deploy --prod
+pip install sdv sdmetrics scikit-learn ucimlrepo
+pip install --no-deps anonymeter && pip install numba polars pyarrow joblib
+
+python sda_pipeline.py --config datasets.json --name "Heart Disease (Cleveland)" --out results
+python sda_pipeline.py --config datasets.json --group new --out results --skip-done
+python summarize.py results          # results/summary.csv and summary.md
 ```
 
-Run these in this folder. The command-line tool needs Node.js (https://nodejs.org). Answer the prompts: link to your account, no build command, output directory `.`.
+Or open `run_in_colab.ipynb` in Colab.
 
-### After deploying, check
+UCI datasets download automatically. The project's own cleaned files go in `data/existing/` (copy them from the Drive folder `original dataset`). `data/` and `results/` are git-ignored: datasets and synthetic outputs never go to Git.
 
-1. The page loads and the favicon shows.
-2. **Try the demo pair → Run audit** finishes and the Overview fills in.
-3. **Reports & Exports → Download PDF** saves a PDF that opens.
-4. On a phone, the page fits without sideways scrolling.
+## datasets.json fields
 
-## What was tested before release
+`name`, `group` (`existing`/`new`), `source` (`csv` path or `uci_id`), `target`, `task` (`classification`/`regression`), optional `drop_columns`, `sensitive_columns` (secrets for attribute inference, default the target), `strip_label_dots`, `max_rows` (seeded sample for very large data).
 
-- **Real pairs from the project:** Adult (48,842 rows each) and Wine Quality (6,497 rows each). All modules completed; PDF reports were valid (12 and 11 pages).
-- **Demo pair:** run through the full workflow in the browser.
-- **Phone width (375 px):** no horizontal overflow.
-- **Pages checked visually:** Overview, Fidelity, Governance, Reports, in light and dark mode.
-
-## Limitations
-
-- The engines are JavaScript re-implementations of the notebook methods (SDMetrics-style column shapes and pair trends, scikit-learn-style models). Numbers can differ from the Colab baselines.
-- Fidelity is computed on a seeded sample of up to 5,000 rows by default. Very large files (for example Covertype, 75 MB) are slow, because everything runs in the visitor's browser tab.
-- Shadow-model MIA, attribute inference, singling-out and linkability are shown as "not available in this version".
-- Governance mappings are a screening aid for reviewers, not legal advice.
-
-## Next steps (optional Python backend)
-
-To reproduce the notebook results exactly (SDMetrics, scikit-learn) and handle very large files, add a FastAPI service with background jobs, a health endpoint and temporary upload storage. Host it on Render, Railway or Fly.io, and point the frontend at it through an API address variable. The browser engines would remain the fallback.
+A failed step is recorded with its error and the run continues; a failed dataset never stops the batch.
