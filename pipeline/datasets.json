@@ -1,0 +1,597 @@
+[
+ {
+  "name": "Adult",
+  "group": "existing",
+  "source": {
+   "csv": "dataset1_adult.csv",
+   "project_file": "original dataset/dataset1_adult"
+  },
+  "target": "income",
+  "task": "classification",
+  "strip_label_dots": true,
+  "sensitive_columns": [
+   "income",
+   "sex",
+   "race"
+  ],
+  "domain": "Social & education",
+  "person_level": true,
+  "slug": "adult"
+ },
+ {
+  "name": "Wine Quality",
+  "group": "existing",
+  "source": {
+   "csv": "dataset2_wine_quality_clean.csv"
+  },
+  "target": "quality",
+  "task": "regression",
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "wine_quality"
+ },
+ {
+  "name": "Bank Marketing",
+  "group": "existing",
+  "source": {
+   "csv": "dataset3_bank_marketing.csv"
+  },
+  "target": "y",
+  "task": "classification",
+  "sensitive_columns": [
+   "y",
+   "balance"
+  ],
+  "domain": "Finance & business",
+  "person_level": true,
+  "slug": "bank_marketing"
+ },
+ {
+  "name": "Breast Cancer Wisconsin (Diagnostic)",
+  "group": "existing",
+  "source": {
+   "csv": "dataset5_breast_cancer.csv"
+  },
+  "target": "1",
+  "task": "classification",
+  "drop_columns": [
+   "0"
+  ],
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "breast_cancer_wisconsin__diagnostic"
+ },
+ {
+  "name": "Appliances Energy",
+  "group": "existing",
+  "source": {
+   "csv": "dataset6_appliances_energy_clean.csv"
+  },
+  "target": "appliances",
+  "task": "regression",
+  "drop_columns": [
+   "date"
+  ],
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "appliances_energy"
+ },
+ {
+  "name": "Dry Bean",
+  "group": "existing",
+  "source": {
+   "csv": "dataset7_dry_bean_clean_3.csv"
+  },
+  "target": "class",
+  "task": "classification",
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "dry_bean"
+ },
+ {
+  "name": "Student Performance (Math)",
+  "group": "existing",
+  "source": {
+   "csv": "dataset8_student_performance_math_clean.csv"
+  },
+  "target": "g3",
+  "task": "regression",
+  "sensitive_columns": [
+   "g3",
+   "dalc",
+   "walc",
+   "health"
+  ],
+  "domain": "Social & education",
+  "person_level": true,
+  "slug": "student_performance__math"
+ },
+ {
+  "name": "Covertype",
+  "group": "existing",
+  "source": {
+   "uci_id": 31
+  },
+  "target": "Cover_Type",
+  "task": "classification",
+  "max_rows": 30000,
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "covertype"
+ },
+ {
+  "name": "Credit Card Default",
+  "group": "existing",
+  "source": {
+   "csv": "dataset10_credit_card_default_clean.csv"
+  },
+  "target": "default_payment_next_month",
+  "task": "classification",
+  "sensitive_columns": [
+   "default_payment_next_month",
+   "limit_bal"
+  ],
+  "domain": "Finance & business",
+  "person_level": true,
+  "slug": "credit_card_default"
+ },
+ {
+  "name": "Forest Fires",
+  "group": "existing",
+  "source": {
+   "uci_id": 162
+  },
+  "target": "area",
+  "task": "regression",
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "forest_fires"
+ },
+ {
+  "name": "Real Estate Valuation",
+  "group": "existing",
+  "source": {
+   "uci_id": 477
+  },
+  "target": "Y house price of unit area",
+  "task": "regression",
+  "drop_columns": [
+   "No"
+  ],
+  "domain": "Finance & business",
+  "person_level": false,
+  "slug": "real_estate_valuation"
+ },
+ {
+  "name": "Abalone",
+  "group": "new",
+  "source": {
+   "uci_id": 1
+  },
+  "target": "Rings",
+  "task": "regression",
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "abalone"
+ },
+ {
+  "name": "Auto MPG",
+  "group": "new",
+  "source": {
+   "uci_id": 9
+  },
+  "target": "mpg",
+  "task": "regression",
+  "drop_columns": [
+   "car_name"
+  ],
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "auto_mpg"
+ },
+ {
+  "name": "Car Evaluation",
+  "group": "new",
+  "source": {
+   "uci_id": 19
+  },
+  "target": "class",
+  "task": "classification",
+  "domain": "Finance & business",
+  "person_level": false,
+  "slug": "car_evaluation"
+ },
+ {
+  "name": "Credit Approval",
+  "group": "new",
+  "source": {
+   "uci_id": 27
+  },
+  "target": "A16",
+  "task": "classification",
+  "domain": "Finance & business",
+  "person_level": true,
+  "slug": "credit_approval"
+ },
+ {
+  "name": "Contraceptive Method Choice",
+  "group": "new",
+  "source": {
+   "uci_id": 30
+  },
+  "target": "contraceptive_method",
+  "task": "classification",
+  "sensitive_columns": [
+   "contraceptive_method",
+   "wife_religion"
+  ],
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "contraceptive_method_choice"
+ },
+ {
+  "name": "Haberman's Survival",
+  "group": "new",
+  "source": {
+   "uci_id": 43
+  },
+  "target": "survival_status",
+  "task": "classification",
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "haberman_s_survival"
+ },
+ {
+  "name": "Heart Disease (Cleveland)",
+  "group": "new",
+  "source": {
+   "uci_id": 45
+  },
+  "target": "num",
+  "task": "classification",
+  "sensitive_columns": [
+   "num",
+   "sex"
+  ],
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "heart_disease__cleveland"
+ },
+ {
+  "name": "Hepatitis",
+  "group": "new",
+  "source": {
+   "uci_id": 46
+  },
+  "target": "Class",
+  "task": "classification",
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "hepatitis"
+ },
+ {
+  "name": "Mushroom",
+  "group": "new",
+  "source": {
+   "uci_id": 73
+  },
+  "target": "poisonous",
+  "task": "classification",
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "mushroom"
+ },
+ {
+  "name": "Spambase",
+  "group": "new",
+  "source": {
+   "uci_id": 94
+  },
+  "target": "Class",
+  "task": "classification",
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "spambase"
+ },
+ {
+  "name": "German Credit",
+  "group": "new",
+  "source": {
+   "uci_id": 144
+  },
+  "target": "class",
+  "task": "classification",
+  "sensitive_columns": [
+   "class",
+   "Attribute9"
+  ],
+  "domain": "Finance & business",
+  "person_level": true,
+  "slug": "german_credit"
+ },
+ {
+  "name": "Concrete Compressive Strength",
+  "group": "new",
+  "source": {
+   "uci_id": 165
+  },
+  "target": "Concrete compressive strength",
+  "task": "regression",
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "concrete_compressive_strength"
+ },
+ {
+  "name": "Parkinsons",
+  "group": "new",
+  "source": {
+   "uci_id": 174
+  },
+  "target": "status",
+  "task": "classification",
+  "drop_columns": [
+   "name"
+  ],
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "parkinsons"
+ },
+ {
+  "name": "Indian Liver Patient (ILPD)",
+  "group": "new",
+  "source": {
+   "uci_id": 225
+  },
+  "target": "Selector",
+  "task": "classification",
+  "sensitive_columns": [
+   "Selector",
+   "Gender"
+  ],
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "indian_liver_patient__ilpd"
+ },
+ {
+  "name": "Energy Efficiency",
+  "group": "new",
+  "source": {
+   "uci_id": 242
+  },
+  "target": "Y1",
+  "task": "regression",
+  "drop_columns": [
+   "Y2"
+  ],
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "energy_efficiency"
+ },
+ {
+  "name": "Banknote Authentication",
+  "group": "new",
+  "source": {
+   "uci_id": 267
+  },
+  "target": "class",
+  "task": "classification",
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "banknote_authentication"
+ },
+ {
+  "name": "Bike Sharing (hourly)",
+  "group": "new",
+  "source": {
+   "uci_id": 275
+  },
+  "target": "cnt",
+  "task": "regression",
+  "drop_columns": [
+   "instant",
+   "dteday",
+   "casual",
+   "registered"
+  ],
+  "domain": "Social & education",
+  "person_level": false,
+  "slug": "bike_sharing__hourly"
+ },
+ {
+  "name": "Airfoil Self-Noise",
+  "group": "new",
+  "source": {
+   "uci_id": 291
+  },
+  "target": "scaled-sound-pressure",
+  "task": "regression",
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "airfoil_self_noise"
+ },
+ {
+  "name": "Combined Cycle Power Plant",
+  "group": "new",
+  "source": {
+   "uci_id": 294
+  },
+  "target": "PE",
+  "task": "regression",
+  "domain": "Science & engineering",
+  "person_level": false,
+  "slug": "combined_cycle_power_plant"
+ },
+ {
+  "name": "Diabetic Retinopathy Debrecen",
+  "group": "new",
+  "source": {
+   "uci_id": 329
+  },
+  "target": "Class",
+  "task": "classification",
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "diabetic_retinopathy_debrecen"
+ },
+ {
+  "name": "Chronic Kidney Disease",
+  "group": "new",
+  "source": {
+   "uci_id": 336
+  },
+  "target": "class",
+  "task": "classification",
+  "sensitive_columns": [
+   "class",
+   "htn",
+   "dm"
+  ],
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "chronic_kidney_disease"
+ },
+ {
+  "name": "Drug Consumption",
+  "group": "new",
+  "source": {
+   "uci_id": 373
+  },
+  "target": "cannabis",
+  "task": "classification",
+  "drop_columns": [
+   "id"
+  ],
+  "sensitive_columns": [
+   "cannabis",
+   "heroin",
+   "coke"
+  ],
+  "domain": "Social & education",
+  "person_level": true,
+  "slug": "drug_consumption"
+ },
+ {
+  "name": "Online Shoppers Intention",
+  "group": "new",
+  "source": {
+   "uci_id": 468
+  },
+  "target": "Revenue",
+  "task": "classification",
+  "domain": "Finance & business",
+  "person_level": false,
+  "slug": "online_shoppers_intention"
+ },
+ {
+  "name": "Heart Failure Clinical Records",
+  "group": "new",
+  "source": {
+   "uci_id": 519
+  },
+  "target": "death_event",
+  "task": "classification",
+  "sensitive_columns": [
+   "death_event",
+   "diabetes",
+   "smoking"
+  ],
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "heart_failure_clinical_records"
+ },
+ {
+  "name": "Early Stage Diabetes Risk",
+  "group": "new",
+  "source": {
+   "uci_id": 529
+  },
+  "target": "class",
+  "task": "classification",
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "early_stage_diabetes_risk"
+ },
+ {
+  "name": "Obesity Levels",
+  "group": "new",
+  "source": {
+   "uci_id": 544
+  },
+  "target": "NObeyesdad",
+  "task": "classification",
+  "sensitive_columns": [
+   "NObeyesdad",
+   "Gender"
+  ],
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "obesity_levels"
+ },
+ {
+  "name": "Iranian Churn",
+  "group": "new",
+  "source": {
+   "uci_id": 563
+  },
+  "target": "Churn",
+  "task": "classification",
+  "domain": "Finance & business",
+  "person_level": true,
+  "slug": "iranian_churn"
+ },
+ {
+  "name": "HCV Data",
+  "group": "new",
+  "source": {
+   "uci_id": 571
+  },
+  "target": "Category",
+  "task": "classification",
+  "drop_columns": [
+   "ID"
+  ],
+  "sensitive_columns": [
+   "Category",
+   "Sex"
+  ],
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "hcv_data"
+ },
+ {
+  "name": "Student Dropout and Success",
+  "group": "new",
+  "source": {
+   "uci_id": 697
+  },
+  "target": "Target",
+  "task": "classification",
+  "sensitive_columns": [
+   "Target",
+   "Debtor"
+  ],
+  "domain": "Social & education",
+  "person_level": true,
+  "slug": "student_dropout_and_success"
+ },
+ {
+  "name": "AIDS Clinical Trials (ACTG 175)",
+  "group": "new",
+  "source": {
+   "uci_id": 890
+  },
+  "target": "cid",
+  "task": "classification",
+  "drop_columns": [
+   "pidnum"
+  ],
+  "sensitive_columns": [
+   "cid",
+   "homo",
+   "drugs"
+  ],
+  "domain": "Health & medicine",
+  "person_level": true,
+  "slug": "aids_clinical_trials__actg_175"
+ }
+]

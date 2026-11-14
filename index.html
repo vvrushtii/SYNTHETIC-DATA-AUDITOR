@@ -10,6 +10,7 @@
 <script src="./engine.js"></script>
 <script src="./kb.js"></script>
 <script src="./export.js"></script>
+<script src="./benchmark.js"></script>
 <script src="./view.js"></script>
 <script src="./fx.js"></script>
 </head>
@@ -609,6 +610,15 @@ details.help[open]>summary{border-bottom:1px solid var(--line)}
 .t-data tr.rm td{text-decoration:line-through;color:var(--faint);background:color-mix(in srgb,var(--red) 4%,transparent)}
 @media (max-width:1100px){.cl-grid{grid-template-columns:1fr}}
 @media (max-width:820px){.receipt>span{white-space:normal;overflow-wrap:anywhere}.cstats{grid-template-columns:1fr 1fr}.cs:nth-child(3){border-left:0}.cs:nth-child(n+3){border-top:1px solid var(--line)}.cs-v{font-size:20px}.vopts{grid-template-columns:1fr}.iss-i{flex-direction:column;align-items:flex-start;gap:8px}.dsws{width:100%}.dsw{flex:1}}
+.bn-h{margin:0;font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-.01em;line-height:1.25}
+.bn-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px}
+.bn-s{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface2)}
+.bn-sv{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:15px;margin-top:4px}
+.bn-top{min-height:1.5em}
+table.bn-t td.num .stl{justify-content:flex-end}
+table.bn-t th,table.bn-t td{padding-left:8px;padding-right:8px}table.bn-t th{white-space:normal;vertical-align:bottom}
+tr.bn-sel td{background:var(--hover)}
+.f-bench{background:var(--violet)}.sw-bench{background:var(--violet)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media (max-width:1100px){.ov-grid{grid-template-columns:1fr}}
 @media (max-width:820px){
@@ -795,6 +805,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
 <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
 <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></symbol>
+<symbol id="i-bench" viewBox="0 0 24 24"><path d="M4 20h16"/><rect x="5" y="12" width="3" height="5" rx=".5"/><rect x="10.5" y="8" width="3" height="9" rx=".5"/><rect x="16" y="4" width="3" height="13" rx=".5"/></symbol>
 <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
 </defs></svg>
 
@@ -840,14 +851,16 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
 <!-- ============================ OVERVIEW ============================ -->
 <sc-if value="{{pg.overview}}"><div class="page">
 
- <sc-if value="{{!ov.has}}"><section class="ov-empty" aria-label="No audit yet">
+ <sc-if value="{{ov.noAudits}}"><section class="ov-empty" aria-label="No audit yet">
   <h2 class="ov-h2">No audit yet</h2>
   <p class="ov-p">Upload a real and a synthetic CSV, or load the clearly labelled demo pair. Fidelity, utility and privacy are then read separately here.</p>
   <div class="cta-row"><button type="button" class="btn btn-primary" onClick="{{ov.newAudit}}">Upload a pair<span class="btn-cap" aria-hidden="true"><svg class="ic"><use href="#i-arrow"/></svg></span></button><button type="button" class="btn" onClick="{{ov.demo}}"><span class="btn-disc" aria-hidden="true"><svg class="ic"><use href="#i-flask"/></svg></span>Try the demo pair</button></div>
  </section></sc-if>
 
+ <sc-if value="{{ov.bn.has}}"><section class="ov-sec" aria-labelledby="ov-bn"><div class="ov-row"><div><h2 class="ov-h2" id="ov-bn">Six-attack benchmark</h2><p class="ov-p" style="margin-top:6px">{{ov.bn.text}}</p></div><button type="button" class="btn btn-sm" onClick="{{ov.bn.go}}"><svg class="ic"><use href="#i-bench"/></svg>Open benchmark</button></div></section></sc-if>
+
  <sc-if value="{{ov.has}}"><section class="ov-sec" aria-labelledby="ov-stand">
-  <h2 class="ov-h2" id="ov-stand">Where this audit stands</h2>
+  <div class="ov-row"><div><h2 class="ov-h2" id="ov-stand">Where this audit stands</h2><p class="ov-p" style="margin-top:6px">{{ov.standSub}}</p></div><button type="button" class="btn btn-sm" onClick="{{ov.clearSel}}">Show all pairs</button></div>
   <div class="ov-cards">
    <sc-for list="{{ov.stand}}" as="s"><article class="{{s.cls}}">
     <div class="st-k">{{s.label}}</div>
@@ -861,7 +874,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
  </section></sc-if>
 
  <sc-if value="{{ov.hasRecent}}"><section class="ov-sec" aria-labelledby="ov-rec">
-  <div class="ov-row"><div><h2 class="ov-h2" id="ov-rec">Recent audits</h2><p class="ov-p" style="margin-top:6px">{{ov.recSub}}</p></div>
+  <div class="ov-row"><div><h2 class="ov-h2" id="ov-rec">{{ov.recTitle}}</h2><p class="ov-p" style="margin-top:6px">{{ov.recSub}}</p><sc-if value="{{ov.pickNote}}"><p class="ov-p">Open a pair to see where it stands. Nothing is pre-selected when you come back.</p></sc-if></div>
    <div class="segc" role="group" aria-label="Filter audits by status"><sc-for list="{{ov.filters}}" as="t"><button type="button" class="{{t.cls}}" aria-pressed="{{t.on}}" onClick="{{t.go}}">{{t.label}}</button></sc-for></div></div>
   <div class="ov-table">
    <div class="tw"><table class="t" style="min-width:680px"><thead><tr><th>Dataset</th><th>Generator</th><th>Status</th><th>Finished</th><th><span class="sr">Open</span></th></tr></thead><tbody>
@@ -869,6 +882,8 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
    </tbody></table></div>
    <sc-if value="{{ov.noRows}}"><p class="small mute" style="padding:18px 0;text-align:center">No audits match this filter.</p></sc-if>
   </div>
+  <sc-if value="{{!ov.clr.ask}}"><button type="button" class="more" onClick="{{ov.clr.start}}">Remove all audits from this browser</button></sc-if>
+  <sc-if value="{{ov.clr.ask}}"><div class="note n-red"><svg class="ic"><use href="#i-alert"/></svg><div class="sp">Remove every stored audit, its review history and export log from this browser? This cannot be undone.<div class="cta-row mt"><button type="button" class="btn btn-danger btn-sm" onClick="{{ov.clr.confirm}}">Remove all</button><button type="button" class="btn btn-sm" onClick="{{ov.clr.cancel}}">Cancel</button></div></div></div></sc-if>
  </section></sc-if>
 
  <sc-if value="{{ov.has}}"><section class="ov-sec" aria-labelledby="ov-cov">
@@ -1288,9 +1303,9 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
 
 <!-- ============================ PRIVACY ============================ -->
 <sc-if value="{{pg.privacy}}"><div class="page">
- <sc-if value="{{!pr.has}}"><div class="empty"><div class="empty-ic"><svg class="ic"><use href="#i-lock"/></svg></div><h3>No privacy tests have run</h3><p>{{empty.text}} Attack records appear here as separate cards once the privacy module has run.</p><div class="cta-row"><button type="button" class="btn btn-primary" onClick="{{empty.newAudit}}">Start New Audit</button><button type="button" class="btn" onClick="{{empty.demo}}">Load demo pair</button></div></div></sc-if>
+ <sc-if value="{{!pr.has}}"><div class="empty"><div class="empty-ic"><svg class="ic"><use href="#i-lock"/></svg></div><h3>No privacy tests have run</h3><p>{{empty.text}} Attack records appear here as separate cards once the privacy module has run.</p><div class="cta-row"><button type="button" class="btn btn-primary" onClick="{{empty.newAudit}}">Start New Audit</button><button type="button" class="btn" onClick="{{empty.demo}}">Load demo pair</button><button type="button" class="btn" onClick="{{empty.goBench}}"><svg class="ic"><use href="#i-bench"/></svg>Six-attack benchmark</button></div></div></sc-if>
  <sc-if value="{{pr.has}}">
-  <div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div class="sp"><b>{{pr.summary}}.</b> Attack types not available in this version are shown as not applicable, never as completed.</div><span class="badge b-{{pr.kind.tone}}"><svg class="ic"><use href="#i-{{pr.kind.icon}}"/></svg>{{pr.kind.label}}</span></div>
+  <div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div class="sp"><b>{{pr.summary}}.</b> This browser runs 2 of the 6 attack types. The other four need Python libraries, so they run in the offline pipeline; they are shown here as not applicable, never as completed. <button type="button" class="more" onClick="{{pr.goBench}}">See all six on 41 public datasets</button></div><span class="badge b-{{pr.kind.tone}}"><svg class="ic"><use href="#i-{{pr.kind.icon}}"/></svg>{{pr.kind.label}}</span></div>
   <sc-for list="{{pr.cards}}" as="c"><article class="{{c.cls}}">
    <div class="card-h"><div><h3 class="card-t">{{c.name}}</h3><p class="card-s" style="max-width:760px">{{c.desc}}</p></div><span class="badge b-{{c.bd.tone}}"><svg class="ic"><use href="#i-{{c.bd.icon}}"/></svg>{{c.bd.label}}</span></div>
    <sc-if value="{{c.hasMsg}}"><div class="note n-grey"><svg class="ic"><use href="#i-dash"/></svg><div>{{c.msg}}</div></div></sc-if>
@@ -1455,6 +1470,83 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
  </sc-if>
 </div></sc-if>
 
+<!-- ============================ BENCHMARK ============================ -->
+<sc-if value="{{pg.bench}}"><div class="page">
+ <div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div class="sp"><b>Offline results, not computed in this browser.</b> {{bn.note}} Each attack is read on its own: <span class="stl"><i class="sq sq-amber" aria-hidden="true"></i>amber</span> marks a result whose 95% interval excludes chance. Nothing is averaged into one risk score.</div><span class="badge b-navy"><svg class="ic"><use href="#i-layers"/></svg>Benchmark · offline</span></div>
+
+ <sc-if value="{{bn.hasDetail}}"><div class="page" style="gap:20px">
+  <div class="row"><button type="button" class="btn btn-sm" onClick="{{bn.detail.close}}"><svg class="ic" style="transform:rotate(180deg)"><use href="#i-arrow"/></svg>All datasets</button><span class="small mute">{{bn.detail.tally}}</span></div>
+  <article class="card">
+   <div class="card-h"><div><h2 class="bn-h">{{bn.detail.name}}</h2><p class="card-s">{{bn.detail.group}}<sc-if value="{{bn.detail.hasUci}}"> · <a href="{{bn.detail.uciUrl}}" target="_blank" rel="noopener noreferrer">{{bn.detail.uci}} on the UCI repository</a></sc-if></p></div><sc-if value="{{bn.detail.isImp}}"><span class="badge b-navy"><svg class="ic"><use href="#i-upload"/></svg>Imported in this browser</span></sc-if></div>
+   <dl class="kv"><sc-for list="{{bn.detail.facts}}" as="p"><dt>{{p.k}}</dt><dd>{{p.v}}</dd></sc-for></dl>
+   <sc-if value="{{bn.detail.hasCleaning}}"><details class="help mt"><summary><svg class="ic"><use href="#i-wand"/></svg>Cleaning steps recorded by the pipeline</summary><div class="help-b"><ul class="small" style="margin:0;padding-left:18px"><sc-for list="{{bn.detail.cleaning}}" as="c"><li>{{c}}</li></sc-for></ul></div></details></sc-if>
+  </article>
+
+  <div class="g2">
+   <article class="card"><div class="card-h"><div><h3 class="card-t">Fidelity</h3><p class="card-s">{{bn.detail.fid.engine}} · real training rows vs synthetic</p></div></div>
+    <sc-if value="{{bn.detail.fid.ok}}"><div class="g2" style="gap:14px"><sc-for list="{{bn.detail.fid.stats}}" as="m"><div class="bigstat"><span class="small mute">{{m.k}}</span><span class="bigv">{{m.v}}</span><span class="xs mute">{{m.sub}}</span></div></sc-for></div>
+     <sc-if value="{{bn.detail.fid.hasWeak}}"><div class="sec-t mt">Weakest columns</div><div class="tw"><table class="t"><thead><tr><th>Column</th><th>Metric</th><th class="num">Score</th></tr></thead><tbody><sc-for list="{{bn.detail.fid.weakest}}" as="w"><tr><td>{{w.col}}</td><td class="small">{{w.metric}}</td><td class="num mono">{{w.score}}</td></tr></sc-for></tbody></table></div></sc-if></sc-if>
+    <sc-if value="{{!bn.detail.fid.ok}}"><p class="small mute">Fidelity: {{bn.detail.fid.status}}. No score is shown.</p></sc-if>
+   </article>
+   <article class="card"><div class="card-h"><div><h3 class="card-t">Utility · TRTR vs TSTR</h3><p class="card-s">{{bn.detail.util.model}}</p></div></div>
+    <sc-if value="{{bn.detail.util.ok}}">
+     <div class="bigstat"><span class="small mute">Retention on {{bn.detail.util.prim}}</span><span class="bigv">{{bn.detail.util.ret}}</span><span class="xs mute">TSTR as a share of TRTR</span></div>
+     <div class="tw mt"><table class="t"><thead><tr><th>Metric</th><th class="num">Real-trained (TRTR)</th><th class="num">Synthetic-trained (TSTR)</th></tr></thead><tbody><sc-for list="{{bn.detail.util.rows}}" as="m"><tr><td><span class="b">{{m.k}}</span><sc-if value="{{m.prim}}"> <span class="xs mute">· headline</span></sc-if><div class="xs mute">{{m.dir}}</div></td><td class="num mono">{{m.trtr}}</td><td class="num mono">{{m.tstr}}</td></tr></sc-for></tbody></table></div>
+     <p class="xs mute mt">{{bn.detail.util.split}}<sc-if value="{{bn.detail.util.hasMaj}}"> · always predicting the majority class scores {{bn.detail.util.majority}} accuracy</sc-if></p>
+     <sc-if value="{{bn.detail.util.negR2}}"><div class="note n-amber mt"><svg class="ic"><use href="#i-alert"/></svg><div>The real-trained model already has a negative R², so it predicts worse than the mean. Retention against it says little about utility.</div></div></sc-if>
+    </sc-if>
+    <sc-if value="{{!bn.detail.util.ok}}"><p class="small mute">Utility: {{bn.detail.util.status}}. No score is shown.</p></sc-if>
+   </article>
+  </div>
+
+  <div class="ov-row"><div><h2 class="ov-h2">The six privacy attacks</h2><p class="ov-p" style="margin-top:6px">One card per attack, each with its own scale and interval. A low value on one attack never cancels a signal on another.</p></div></div>
+  <sc-for list="{{bn.detail.cards}}" as="c"><article class="{{c.cls}}">
+   <div class="card-h"><div><h3 class="card-t">{{c.name}}</h3><p class="card-s" style="max-width:760px">{{c.what}}</p></div><span class="badge b-{{c.bd.tone}}"><svg class="ic"><use href="#i-{{c.bd.icon}}"/></svg>{{c.bd.label}}</span></div>
+   <sc-if value="{{!c.done}}"><div class="note n-grey"><svg class="ic"><use href="#i-dash"/></svg><div>{{c.msg}} This is not counted as a pass.</div></div></sc-if>
+   <sc-if value="{{c.done}}">
+    <div class="g4" style="margin-bottom:12px"><sc-for list="{{c.metrics}}" as="m"><div class="bigstat"><span class="small mute">{{m.k}}</span><span class="bigv">{{m.v}}</span><span class="xs mute">{{m.sub}}</span></div></sc-for></div>
+    <div class="note n-grey" style="margin-bottom:12px"><svg class="ic"><use href="#i-lock"/></svg><div><b>Interpretation.</b> {{c.interp}}</div></div>
+    <sc-if value="{{c.isInfer}}"><div class="tw" style="margin-bottom:12px"><table class="t" style="min-width:620px"><thead><tr><th>Secret column</th><th class="num">Risk</th><th class="num">95% CI</th><th class="num">Success · training</th><th class="num">Success · holdout</th><th class="num">Random guess</th></tr></thead><tbody><sc-for list="{{c.secrets}}" as="s"><tr><td class="b">{{s.col}}</td><td class="num mono"><sc-if value="{{s.above}}"><span class="stl"><i class="sq sq-amber" aria-hidden="true"></i>{{s.risk}}</span><span class="sr">above zero</span></sc-if><sc-if value="{{!s.above}}">{{s.risk}}</sc-if></td><td class="num mono">{{s.ci}}</td><td class="num mono">{{s.atk}}</td><td class="num mono">{{s.ctl}}</td><td class="num mono">{{s.base}}</td></tr></sc-for></tbody></table></div></sc-if>
+    <dl class="kv"><dt>Method</dt><dd>{{c.method}}</dd><sc-for list="{{c.rates}}" as="p"><dt>{{p.k}}</dt><dd class="mono">{{p.v}}</dd></sc-for><sc-if value="{{c.nAttacks}}"><dt>Attack budget</dt><dd>{{c.nAttacks}}</dd></sc-if></dl>
+    <p class="xs mute mt">Limitation: {{c.lim}}</p>
+   </sc-if>
+  </article></sc-for>
+  <div class="note n-grey"><svg class="ic"><use href="#i-info"/></svg><div>No combined risk category is given. The ensemble rules in this app (EPE-0.1) set thresholds only for the two browser attacks, so the four Anonymeter and shadow-model results are shown as they are, next to each other.</div></div>
+ </div></sc-if>
+
+ <sc-if value="{{!bn.hasDetail}}"><div class="page" style="gap:20px">
+  <div class="g4"><sc-for list="{{bn.kpis}}" as="k"><article class="card"><div class="bigstat"><span class="small mute">{{k.k}}</span><span class="bigv">{{k.v}}</span><span class="xs mute">{{k.sub}}</span></div></article></sc-for></div>
+
+  <article class="card"><div class="card-h"><div><h3 class="card-t">Each attack across the datasets shown</h3><p class="card-s">Median and highest raw value, and how many datasets cross chance. Attacks use different scales, so their numbers are never added or averaged together.</p></div></div>
+   <div class="bn-sum"><sc-for list="{{bn.sum}}" as="s"><div class="bn-s" title="{{s.what}}"><div class="b">{{s.short}}</div><div class="xs mute">{{s.chance}} · {{s.done}} of {{s.of}} completed</div><div class="bn-sv"><span><span class="xs mute">median</span> <span class="mono">{{s.med}}</span></span><span><span class="xs mute">highest</span> <span class="mono">{{s.max}}</span></span></div><div class="xs mute bn-top">{{s.maxName}}</div><span class="stl small"><i class="sq sq-{{s.tone}}" aria-hidden="true"></i>{{s.detText}}</span></div></sc-for></div>
+  </article>
+
+  <article class="card"><div class="card-h"><div><h3 class="card-t">All datasets</h3><p class="card-s">Showing {{bn.count}} of {{bn.total}} · raw values · N/A and Skipped are never zero</p></div><button type="button" class="btn btn-sm" onClick="{{bn.clear}}">Clear filters</button></div>
+   <div class="g4" style="margin-bottom:16px">
+    <div class="field"><label for="bn-q">Dataset name</label><input id="bn-q" type="text" name="bn.q" value="{{bn.filters.q}}" onChange="{{act.setField}}" placeholder="Search…"></div>
+    <div class="field"><label for="bn-g">Datasets</label><select id="bn-g" name="bn.group" value="{{bn.filters.group}}" onChange="{{act.setField}}"><sc-for list="{{bn.filters.groups}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+    <div class="field"><label for="bn-t">Task</label><select id="bn-t" name="bn.task" value="{{bn.filters.task}}" onChange="{{act.setField}}"><option value="">All tasks</option><option value="classification">Classification</option><option value="regression">Regression</option></select></div>
+    <div class="field"><label for="bn-s">Signals</label><select id="bn-s" name="bn.sig" value="{{bn.filters.sig}}" onChange="{{act.setField}}"><option value="">Any</option><option value="any">At least one attack above chance</option><option value="none">No attack above chance</option></select></div>
+    <div class="field"><label for="bn-o">Sort by</label><select id="bn-o" name="bn.sort" value="{{bn.filters.sort}}" onChange="{{act.setField}}"><sc-for list="{{bn.filters.sorts}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+   </div>
+   <div class="tw"><table class="t bn-t" style="min-width:980px"><thead><tr><th>Dataset</th><th class="num">Fidelity</th><th class="num">Utility retention</th><sc-for list="{{bn.heads}}" as="h"><th class="num">{{h}}</th></sc-for><th><span class="sr">Open</span></th></tr></thead><tbody>
+    <sc-for list="{{bn.rows}}" as="r"><tr class="{{r.cls}}"><td style="min-width:200px"><div class="b">{{r.name}}</div><div class="xs mute">{{r.sub}}</div><sc-if value="{{r.isImp}}"><div class="xs" style="color:var(--navy)">Imported in this browser</div></sc-if></td><td class="num mono">{{r.fid}}</td><td class="num mono">{{r.ret}}<div class="xs mute">{{r.retSub}}</div></td>
+     <sc-for list="{{r.cells}}" as="c"><td class="num"><sc-if value="{{c.na}}"><span class="small mute">{{c.text}}</span></sc-if><sc-if value="{{!c.na}}"><span class="stl mono"><i class="sq sq-{{c.tone}}" aria-hidden="true"></i>{{c.text}}</span><span class="sr">{{c.sr}}</span></sc-if></td></sc-for>
+     <td class="num"><button type="button" class="more" onClick="{{r.open}}">Open</button></td></tr></sc-for>
+   </tbody></table></div>
+   <sc-if value="{{bn.noRows}}"><p class="small mute" style="padding:18px 0;text-align:center">No datasets match these filters.</p></sc-if>
+   <div class="legend mt"><span class="lg"><i class="sq sq-amber" aria-hidden="true" style="margin-right:7px"></i>95% interval excludes chance (for exact match: any excess over holdout)</span><span class="lg"><i class="sq sq-grey" aria-hidden="true" style="margin-right:7px"></i>Consistent with chance, not proof of safety</span></div>
+   <p class="mini">Membership AUCs: chance 0.5. Exact match: percentage points of training rows copied beyond the holdout rate. Singling-out (4-column), linkability and attribute inference (highest secret column): Anonymeter risk, 0 = no excess over the holdout rows, 1 = every attack succeeds. Fidelity uses the SDMetrics package here, so it can differ slightly from this browser’s re-implementation.</p>
+  </article>
+
+  <article class="card"><div class="card-h"><div><h3 class="card-t">Import pipeline results</h3><p class="card-s">Run the Python pipeline in Colab (<span class="mono">run_in_colab.ipynb</span>, which calls <span class="mono">sda_pipeline.py</span>) on any dataset, then import the per-dataset <span class="mono">.json</span> files it writes. They hold metrics only, no data rows. Only the metrics are read and kept, in this browser.</p></div></div>
+   <div class="cta-row"><label class="btn btn-primary" for="bn-file"><svg class="ic"><use href="#i-upload"/></svg>Choose result files (.json)</label><input class="sr" id="bn-file" type="file" multiple accept=".json,application/json" onChange="{{bn.pick}}"><sc-if value="{{bn.hasImp}}"><button type="button" class="btn" onClick="{{bn.removeAll}}"><svg class="ic"><use href="#i-trash"/></svg>Remove all {{bn.impCount}} imported</button></sc-if></div>
+   <sc-if value="{{bn.hasImp}}"><div class="tw mt"><table class="t"><thead><tr><th>Imported dataset</th><th>Generator</th><th><span class="sr">Remove</span></th></tr></thead><tbody><sc-for list="{{bn.imp}}" as="i"><tr><td class="b">{{i.name}}</td><td class="small">{{i.gen}}</td><td class="num"><button type="button" class="more" onClick="{{i.remove}}">Remove</button></td></tr></sc-for></tbody></table></div></sc-if>
+   <p class="xs mute mt">Uploads to New Audit still run the two browser attacks only. The other four need Python libraries (SDV, Anonymeter) that cannot run in a web page.</p>
+  </article>
+ </div></sc-if>
+</div></sc-if>
+
 <!-- ============================ COMPARE ============================ -->
 <sc-if value="{{pg.compare}}"><div class="page">
  <article class="card"><div class="card-h"><div><h3 class="card-t">Filters</h3><p class="card-s">Filters update the charts and the table together. Generator and task are shown only where they were recorded.</p></div><button type="button" class="btn btn-sm" onClick="{{cm.clear}}">Clear filters</button></div>
@@ -1467,8 +1559,8 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
    <div class="field"><label for="c-o">Data source</label><select id="c-o" name="cmp.source" value="{{cm.filters.valSource}}" onChange="{{act.setField}}"><sc-for list="{{cm.filters.source.opts}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
    <div class="field"><label for="c-so">Sort by</label><select id="c-so" name="cmp.sort" value="{{cm.filters.sort}}" onChange="{{act.setField}}"><option value="name">Name</option><option value="fid">Fidelity (high first)</option><option value="ret">Utility retention (high first)</option><option value="mia">MIA AUC (high first)</option><option value="date">Newest first</option></select></div>
   </div>
-  <div class="legend mt"><span class="lg"><span class="sw sw-hist"></span>Historical baseline</span><span class="lg"><span class="sw sw-cur"></span>Current audit</span><span class="lg"><span class="sw sw-demo"></span>Demo audit</span><span class="xs">Showing {{cm.count}} of {{cm.total}} rows</span></div></article>
- <sc-if value="{{!cm.hasCurrent}}"><div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div>Only the historical baseline is available. Run an audit (or load the demo pair) to compare new results against it.</div></div></sc-if>
+  <div class="legend mt"><span class="lg"><span class="sw sw-hist"></span>Historical baseline</span><span class="lg"><span class="sw sw-bench"></span>Benchmark · offline pipeline</span><span class="lg"><span class="sw sw-cur"></span>Current audit</span><span class="lg"><span class="sw sw-demo"></span>Demo audit</span><span class="xs">Showing {{cm.count}} of {{cm.total}} rows</span></div></article>
+ <sc-if value="{{!cm.hasCurrent}}"><div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div>Only reference results are available: the historical baseline and the offline six-attack benchmark. Run an audit (or load the demo pair) to compare your own pair against them.</div></div></sc-if>
  <sc-if value="{{!cm.hasRows}}"><div class="empty"><h3>No rows match these filters</h3><p>Clear the filters to see everything.</p></div></sc-if>
  <sc-if value="{{cm.hasRows}}">
   <div class="g2"><sc-for list="{{cm.charts}}" as="ch"><article class="card"><div class="card-h"><div><h3 class="card-t">{{ch.title}}</h3><p class="card-s">{{ch.sub}}</p></div></div>
@@ -1477,7 +1569,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
    <div class="tw"><table class="t" style="min-width:1600px"><thead><tr><th>Dataset</th><th>Data</th><th>Domain / task / generator</th><th>Status</th><th class="num">Overall quality</th><th class="num">Col. shapes</th><th class="num">Pair trends</th><th class="num">Corr. diff.</th><th class="num">Utility retention</th><th class="num">MIA AUC</th><th>Privacy coverage</th><th>Ensemble</th><th class="num">Gov. mappings</th><th></th></tr></thead><tbody>
     <sc-for list="{{cm.rows}}" as="r"><tr><td style="min-width:170px"><div class="b">{{r.name}}</div><div class="xs mute">{{r.date}}</div><sc-if value="{{r.hasFlag}}"><div class="xs" style="color:var(--amber)">{{r.flag}}</div></sc-if></td><td><span class="badge b-{{r.kindBd.tone}}"><svg class="ic"><use href="#i-{{r.kindBd.icon}}"/></svg>{{r.kindBd.label}}</span></td><td class="small">{{r.domain}}<br>{{r.task}}<br>{{r.generator}}</td><td><span class="badge b-{{r.statusBd.tone}}"><svg class="ic"><use href="#i-{{r.statusBd.icon}}"/></svg>{{r.statusBd.label}}</span></td>
      <td class="num mono">{{r.overall}}</td><td class="num mono">{{r.shapes}}</td><td class="num mono">{{r.trends}}</td><td class="num mono">{{r.corr}}</td><td class="num mono">{{r.ret}}<div class="xs mute">{{r.retMetric}}</div></td><td class="num mono">{{r.mia}}</td><td class="small">{{r.cov}}</td><td><sc-if value="{{r.hasEns}}"><span class="badge b-{{r.ens.tone}}">{{r.ens.label}}</span></sc-if><sc-if value="{{!r.hasEns}}"><span class="mute small">Not recorded</span></sc-if></td><td class="num">{{r.gov}}</td>
-     <td><sc-if value="{{r.canOpen}}"><button type="button" class="btn btn-sm" onClick="{{r.open}}">Open audit</button></sc-if></td></tr></sc-for></tbody></table></div>
+     <td><sc-if value="{{r.canOpen}}"><button type="button" class="btn btn-sm" onClick="{{r.open}}">{{r.openLabel}}</button></sc-if></td></tr></sc-for></tbody></table></div>
    <p class="mini">{{cm.histNote}}</p></article>
  </sc-if>
 </div></sc-if>
@@ -1547,7 +1639,8 @@ constructor(props) {
   this.state = {
     page: 'overview', audits: [], kbState: {}, currentId: null, includeDemo: false, draft: this.newDraft(), busy: null, progress: { pct: 0, label: '' }, flash: null,
     cl: this.blankCl(), ui: { regEngine: 'all', vaDraft: false, vaFilter: 'all', fidCol: null, fidTab: 'dist', fidSort: 'score', fidDir: 'asc', utTab: 'metrics', utMetric: null, gvTab: 'frameworks', fwType: 'all', kbFw: 'all', mapFw: 'all', mapSuf: 'all', mapRev: 'all' },
-    cmp: { q: '', domain: '', task: '', generator: '', status: '', source: '', sort: 'name' }, kbForm: {}, rvForm: {}, exportLog: {}, confirmDel: null
+    cmp: { q: '', domain: '', task: '', generator: '', status: '', source: '', sort: 'name' }, kbForm: {}, rvForm: {}, exportLog: {}, confirmDel: null, confirmClearAll: false,
+    bn: { q: '', group: '', task: '', sig: '', sort: 'name', sel: null }, benchImported: []
   };
   this.A = this.makeActions();
 }
@@ -1557,7 +1650,11 @@ dataFor(D) { const u = (D || this.state.draft).use || {}; return { real: u.real 
 componentDidMount() {
   try {
     const a = JSON.parse(localStorage.getItem('sda.v1.audits') || '[]'), k = JSON.parse(localStorage.getItem('sda.v1.kb') || '{}'), l = JSON.parse(localStorage.getItem('sda.v1.exports') || '{}');
-    if (Array.isArray(a)) this.setState({ audits: a, kbState: k || {}, exportLog: l || {}, currentId: a.length ? a[a.length - 1].id : null });
+    if (Array.isArray(a)) this.setState({ audits: a, kbState: k || {}, exportLog: l || {}, currentId: null });
+  } catch (e) { /* storage unavailable or empty */ }
+  try {
+    const b = JSON.parse(localStorage.getItem('sda.v1.bench') || '[]');
+    if (Array.isArray(b)) this.setState({ benchImported: b.filter(r => r && typeof r.key === 'string' && typeof r.name === 'string' && Array.isArray(r.attacks) && r.attacks.length === 6 && r.fid && r.util).slice(0, 200) });
   } catch (e) { /* storage unavailable or empty */ }
 }
 persist() {
@@ -1566,6 +1663,25 @@ persist() {
     for (;;) { try { localStorage.setItem('sda.v1.audits', JSON.stringify(list)); break; } catch (e) { if (list.length <= 1) throw e; list = list.slice(1); } }
     localStorage.setItem('sda.v1.kb', JSON.stringify(this.state.kbState)); localStorage.setItem('sda.v1.exports', JSON.stringify(this.state.exportLog));
   } catch (e) { this.flash('Could not store results in this browser (storage is blocked or full). They stay available until you reload.', 'warn'); }
+}
+persistBench() {
+  try { localStorage.setItem('sda.v1.bench', JSON.stringify(this.state.benchImported)); }
+  catch (e) { this.flash('Could not keep the imported results in this browser (storage is blocked or full). They stay available until you reload.', 'warn'); }
+}
+async importBench(files) {
+  if (!files.length) return;
+  const shipped = new Set(SDA.benchAll({}).map(r => r.key)); const got = []; const skipped = [];
+  for (const f of files) {
+    if (f.size > 5 * 1048576) { skipped.push(f.name + ': larger than 5 MB, so not a pipeline result file'); continue; }
+    let j; try { j = JSON.parse(await f.text()); } catch (e) { skipped.push(f.name + ': not valid JSON'); continue; }
+    const items = Array.isArray(j) ? j : j && Array.isArray(j.results) ? j.results : [j];
+    items.forEach((it, i) => { const lab = f.name + (items.length > 1 ? ' #' + (i + 1) : '');
+      try { const r = SDA.benchNormalize(it, 'imported'); if (shipped.has(r.key)) skipped.push(lab + ': same run as a bundled benchmark result'); else got.push(r); }
+      catch (e) { skipped.push(lab + ': ' + (e.message || e)); } });
+  }
+  if (got.length) this.setState(s => { const keep = s.benchImported.filter(x => !got.some(g => g.key === x.key)); return { benchImported: keep.concat(got).slice(-200), bn: Object.assign({}, s.bn, { group: '', sel: null }) }; }, () => this.persistBench());
+  const msg = (got.length ? 'Imported ' + got.length + ' result' + (got.length === 1 ? '' : 's') + '.' : 'Nothing imported.') + (skipped.length ? ' Skipped ' + skipped.length + ': ' + skipped.slice(0, 3).join('; ') + (skipped.length > 3 ? '; …' : '') : '');
+  this.flash(msg, got.length ? (skipped.length ? 'warn' : 'ok') : 'err');
 }
 flash(text, tone) {
   clearTimeout(this.flashTimer); this.setState({ flash: { text, tone: tone || 'info' } });
@@ -1777,7 +1893,7 @@ makeActions() {
     go: page => () => { this.setState(s => ({ page, confirmDel: null, ui: Object.assign({}, s.ui, { vaDraft: false }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
     open: id => () => { this.setState(s => ({ currentId: id, page: 'validation', ui: Object.assign({}, s.ui, { vaDraft: false }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
     openPage: (id, page) => () => { this.setState(s => ({ currentId: id, page, ui: Object.assign({}, s.ui, { vaDraft: false }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
-    selectAudit: e => { const v = e.target.value; if (v) this.setState(s => ({ currentId: v, ui: Object.assign({}, s.ui, { vaDraft: false }) })); },
+    selectAudit: e => { const v = e.target.value; this.setState(s => ({ currentId: v || null, ui: Object.assign({}, s.ui, { vaDraft: false }) })); },
     openDraftValidation: () => { this.setState(s => ({ page: 'validation', ui: Object.assign({}, s.ui, { vaDraft: true }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
     newAudit: () => { this.raw = { real: null, synth: null }; this.clean = { real: null, synth: null }; this.setState({ draft: this.newDraft(), page: 'new', cl: this.blankCl() }); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
     resetDraft: () => { this.raw = { real: null, synth: null }; this.clean = { real: null, synth: null }; this.setState({ draft: this.newDraft(), cl: this.blankCl() }); this.flash('Form reset.', 'info'); },
@@ -1819,6 +1935,7 @@ makeActions() {
       const val = t.type === 'checkbox' ? t.checked : t.type === 'number' ? (t.value === '' ? '' : Number(t.value)) : t.value;
       const dot = name.indexOf('.'); const root = name.slice(0, dot), key = name.slice(dot + 1);
       if (root === 'cmp') { this.setState(s => ({ cmp: Object.assign({}, s.cmp, { [key]: val }) })); return; }
+      if (root === 'bn') { this.setState(s => ({ bn: Object.assign({}, s.bn, { [key]: val }) })); return; }
       if (root === 'ui') { this.setState(s => ({ ui: Object.assign({}, s.ui, { [key]: val }) })); return; }
       const inval = ['info.target', 'info.task', 'info.categorical', 'info.idCols', 'settings.matchedOnly', 'settings.protocol', 'settings.membershipCol'].indexOf(name) >= 0;
       this.mutDraft(d => { d[root] = Object.assign({}, d[root], { [key]: val }); if (name === 'info.task') d.settings = Object.assign({}, d.settings, { primary: '' }); if (name === 'info.target' && this.raw.real) { const t = SDA.utility.suggestTask(this.raw.real, String(val).trim()); if (t) d.info = Object.assign({}, d.info, { task: t.task }); d.settings = Object.assign({}, d.settings, { primary: '' }); } }, inval);
@@ -1844,6 +1961,14 @@ makeActions() {
     toggleFidDir: () => this.setState(s => ({ ui: Object.assign({}, s.ui, { fidDir: s.ui.fidDir === 'asc' ? 'desc' : 'asc' }) })),
     clearCmp: () => this.setState({ cmp: { q: '', domain: '', task: '', generator: '', status: '', source: '', sort: 'name' } }),
     clearFlash: () => this.setState({ flash: null }),
+    bnOpen: key => () => { this.setState(s => ({ bn: Object.assign({}, s.bn, { sel: key }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
+    bnOpenPage: key => () => { this.setState(s => ({ page: 'bench', confirmDel: null, bn: Object.assign({}, s.bn, { sel: key }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
+    bnClose: () => this.setState(s => ({ bn: Object.assign({}, s.bn, { sel: null }) })),
+    bnClear: () => this.setState(s => ({ bn: { q: '', group: '', task: '', sig: '', sort: 'name', sel: s.bn.sel } })),
+    bnImport: e => { const fl = Array.from((e.target && e.target.files) || []); try { e.target.value = ''; } catch (x) { /* ignore */ } this.importBench(fl); },
+    bnRemove: key => () => this.setState(s => ({ benchImported: s.benchImported.filter(x => x.key !== key), bn: Object.assign({}, s.bn, { sel: s.bn.sel === key ? null : s.bn.sel }) }), () => { this.persistBench(); this.flash('Imported result removed from this browser.', 'info'); }),
+    bnRemoveAll: () => { const n = this.state.benchImported.length; this.setState(s => ({ benchImported: [], bn: Object.assign({}, s.bn, { sel: null, group: s.bn.group === 'Imported' ? '' : s.bn.group }) }), () => { this.persistBench(); this.flash(n + ' imported result' + (n === 1 ? '' : 's') + ' removed. Import the files again to bring them back.', 'info'); }); },
+    bnCsv: () => this.saveFile('sda_benchmark_' + new Date().toISOString().slice(0, 10) + '.csv', SDA.benchCsv(this.state), 'CSV', true),
     kbField: (id, f) => e => { const v = e.target.value; this.setState(s => ({ kbForm: Object.assign({}, s.kbForm, { [id]: Object.assign({ reviewer: '', note: '' }, s.kbForm[id], { [f]: v }) }) })); },
     kbMark: id => () => { const f = Object.assign({ reviewer: '', note: '' }, this.state.kbForm[id]); if (f.reviewer.trim().length < 2) return;
       this.setState(s => ({ kbState: Object.assign({}, s.kbState, { [id]: { verification: 'Project-reviewed', reviewer: f.reviewer.trim(), note: f.note.trim(), date: new Date().toISOString().slice(0, 10) } }) }), () => { this.persist(); this.flash(id + ' marked project-reviewed by ' + f.reviewer.trim() + '. Project review is not formal legal review.', 'ok'); }); },
@@ -1863,8 +1988,11 @@ makeActions() {
     exportHtml: () => { const a = this.curAudit(); if (!a) return; try { this.saveFile(a.id + '_audit_report.html', SDA.exp.htmlReport(SDA.exp.reportModel(a, this.govFor(a))), 'HTML'); } catch (e) { this.flash('Could not build the report: ' + e.message, 'err'); } },
     exportJson: () => { const a = this.curAudit(); if (!a) return; this.saveFile(a.id + '_results.json', SDA.exp.auditJson(a, this.govFor(a)), 'JSON'); },
     exportZip: () => { const a = this.curAudit(); if (!a) return; this.setState({ busy: 'export', progress: { pct: 50, label: 'Bundling report, tables and plots…' } }); setTimeout(() => { try { const z = SDA.exp.bundle(a, this.govFor(a)); this.setState({ busy: null }); this.saveFile(a.id + '_audit_bundle.zip', new Blob([z], { type: 'application/zip' }), 'ZIP'); } catch (e) { this.setState({ busy: null }); this.flash('Could not build the bundle: ' + e.message, 'err'); } }, 30); },
+    clearSelection: () => this.setState({ currentId: null, confirmClearAll: false }),
+    askClearAll: () => this.setState({ confirmClearAll: true }), cancelClearAll: () => this.setState({ confirmClearAll: false }),
+    clearAll: () => { const n = this.state.audits.length; this.rawAudit = {}; this.setState({ audits: [], currentId: null, exportLog: {}, confirmClearAll: false, confirmDel: null }, () => { this.persist(); this.flash(n + ' audit' + (n === 1 ? '' : 's') + ' removed from this browser.', 'info'); }); },
     askDelete: () => this.setState({ confirmDel: this.state.currentId }), cancelDelete: () => this.setState({ confirmDel: null }),
-    deleteAudit: () => { const id = this.state.currentId; delete this.rawAudit[id]; this.setState(s => { const audits = s.audits.filter(x => x.id !== id); return { audits, currentId: audits.length ? audits[audits.length - 1].id : null, confirmDel: null, page: 'overview' }; }, () => { this.persist(); this.flash('Audit removed from this browser.', 'info'); }); }
+    deleteAudit: () => { const id = this.state.currentId; delete this.rawAudit[id]; this.setState(s => { const audits = s.audits.filter(x => x.id !== id); return { audits, currentId: null, confirmDel: null, page: 'overview' }; }, () => { this.persist(); this.flash('Audit removed from this browser.', 'info'); }); }
   };
   return A;
 }

@@ -758,10 +758,10 @@ SDA.utility = { run: runUtility, retention, suggestTarget, suggestTask };
 SDA.attackCatalogue = [
   { id: 'mia', name: 'Membership Inference Attack (closest-record distance)', short: 'MIA', implemented: true, description: 'Scores each real record by how close its nearest synthetic neighbour is. If members of the generator’s training set sit systematically closer than non-members, an attacker could infer membership.' },
   { id: 'exact', name: 'Exact-match / record-copying test', short: 'Exact match', implemented: true, description: 'Counts synthetic rows that reproduce a real row on every evaluated column, and compares that rate with a natural-collision baseline from the real data itself.' },
-  { id: 'shadow', name: 'Shadow-model membership inference', short: 'Shadow MIA', implemented: false, description: 'Trains surrogate generators to learn a membership classifier. Not available in this version.' },
-  { id: 'attr', name: 'Attribute inference attack', short: 'Attribute inference', implemented: false, description: 'Infers a sensitive attribute of a known record from its nearest synthetic neighbours. Not available in this version.' },
-  { id: 'single', name: 'Singling-out test', short: 'Singling-out', implemented: false, description: 'Tests whether rare attribute combinations isolate a single real individual. Not available in this version.' },
-  { id: 'link', name: 'Linkability test', short: 'Linkability', implemented: false, description: 'Tests whether two attribute subsets of a record can be linked through the synthetic data. Not available in this version.' }
+  { id: 'shadow', name: 'Shadow-model membership inference', short: 'Shadow MIA', implemented: false, description: 'Trains surrogate generators to learn a membership classifier. It needs Python libraries, so it runs in the offline pipeline, not in the browser (see Benchmark).' },
+  { id: 'attr', name: 'Attribute inference attack', short: 'Attribute inference', implemented: false, description: 'Infers a sensitive attribute of a known record from its nearest synthetic neighbours. It needs Python libraries, so it runs in the offline pipeline, not in the browser (see Benchmark).' },
+  { id: 'single', name: 'Singling-out test', short: 'Singling-out', implemented: false, description: 'Tests whether rare attribute combinations isolate a single real individual. It needs Python libraries, so it runs in the offline pipeline, not in the browser (see Benchmark).' },
+  { id: 'link', name: 'Linkability test', short: 'Linkability', implemented: false, description: 'Tests whether two attribute subsets of a record can be linked through the synthetic data. It needs Python libraries, so it runs in the offline pipeline, not in the browser (see Benchmark).' }
 ];
 
 function distanceSpace(real, synth, plan) {
@@ -871,7 +871,7 @@ async function runExact(real, synth, plan, opt) {
   return att;
 }
 async function runPrivacy(real, synth, plan, opt, progress) {
-  const out = { status: 'Completed', attacks: [], pending: SDA.attackCatalogue.filter(a => !a.implemented).map(a => ({ id: a.id, name: a.name, short: a.short, description: a.description, status: 'Not applicable', reason: 'Not available in this version' })) };
+  const out = { status: 'Completed', attacks: [], pending: SDA.attackCatalogue.filter(a => !a.implemented).map(a => ({ id: a.id, name: a.name, short: a.short, description: a.description, status: 'Not applicable', reason: 'Runs in the offline Python pipeline, not in the browser (see Benchmark)' })) };
   const sel = opt.attacks || { mia: true, exact: true }; let ok = 0, failed = 0;
   for (const [id, fn] of [['mia', runMIA], ['exact', runExact]]) {
     const cat = SDA.attackCatalogue.find(a => a.id === id);
@@ -941,11 +941,11 @@ function computeEnsemble(priv) {
     const ci = att.mia.metrics.aucCI; if (ci) out.uncertainty.push('MIA AUC 95% bootstrap interval: ' + ci[0].toFixed(3) + ' – ' + ci[1].toFixed(3) + (ci[0] < 0.5 && ci[1] > 0.5 ? ' (includes 0.5)' : '') + '.');
     out.uncertainty.push('MIA used ' + att.mia.sampleSizes.members + ' members and ' + att.mia.sampleSizes.nonMembers + ' non-members.');
   }
-  out.uncertainty.push('Coverage is limited to ' + completed.length + ' of ' + R.planned + ' attack types; attack types not available in this version may reveal risks these tests cannot see.');
+  out.uncertainty.push('Coverage is limited to ' + completed.length + ' of ' + R.planned + ' attack types; the four that run only in the offline pipeline may reveal risks these tests cannot see.');
   if (failed.length) out.uncertainty.push('Failed tests: ' + failed.map(a => a.short + (a.error ? ' — ' + a.error : '')).join('; '));
   if (!labelledMia) out.followUps.push('Re-run the membership attack with a membership column or an attested ordered split so that members are known training rows.');
   if (att.mia && att.mia.status === 'Completed' && att.mia.sampleSizes.nonMembers < 200) out.followUps.push('Increase the number of non-members scored (≥ 200) to stabilise TPR at 10% FPR.');
-  out.followUps.push('Implement and run attribute-inference and singling-out tests; they probe risks that distance-based attacks do not.');
+  out.followUps.push('Run the offline Python pipeline (shadow-model MIA, singling-out, linkability, attribute inference); these probe risks that the two browser attacks do not.');
   if (out.category === 'High' || out.category === 'Moderate') out.followUps.push('Review the generation process (regularisation, differential-privacy options, training-set size) and re-run the audit after any change.');
   if (notRun.length) out.followUps.push('Run the unselected implemented test(s): ' + notRun.map(a => a.short).join(', ') + '.');
   return out;
@@ -1017,7 +1017,7 @@ async function runEvaluations(real, synth, validation, info, st, hooks) {
   const wrap = async (key, fn) => { if (cancel.flag) throw cancelledError(); step('Running ' + key + '…'); await tick(); try { out[key] = await fn(); } catch (e) { if (e && e.cancelled) throw e; out[key] = { status: 'Failed', error: 'Unexpected error: ' + (e && e.message ? e.message : e) }; } done++; };
   if (st.doFidelity) { if (!plan.evalCols.length) out.fidelity = { status: 'Blocked', reason: 'No column can be compared in both files, so fidelity cannot be measured.' }; else await wrap('fidelity', () => runFidelity(real, synth, plan, { seed, maxRows })); } else out.fidelity = { status: 'Not Run', reason: 'Disabled in evaluation settings.' };
   if (st.doUtility) { if (!plan.target) out.utility = { status: 'Not Run', reason: 'No target column selected, so predictive utility was skipped. No score is produced.' }; else if (plan.utilityBlocked) out.utility = { status: 'Blocked', reason: plan.utilityBlocked + ' No score is produced.' }; else await wrap('utility', () => runUtility(real, synth, plan, { seed, mode: st.mode, model: st.model, primary: st.primary, testSize: +st.testSize || 0.3, maxRows: st.mode === 'full' ? 20000 : 4000 })); } else out.utility = { status: 'Not Run', reason: 'Disabled in evaluation settings.' };
-  if (st.doPrivacy) await wrap('privacy', () => runPrivacy(real, synth, plan, { seed, mode: st.mode, protocol: st.protocol, memberFrac: +st.memberFrac || 0.8, attested: st.attested, attacks: { mia: st.attackMia, exact: st.attackExact } }, l => prog(Math.round(done / (mods.length + 1) * 100), 'Privacy test: ' + l + '…'))); else out.privacy = { status: 'Not Run', reason: 'Disabled in evaluation settings.', attacks: [], pending: SDA.attackCatalogue.filter(a => !a.implemented).map(a => ({ id: a.id, name: a.name, short: a.short, status: 'Not applicable', reason: 'Not available in this version' })) };
+  if (st.doPrivacy) await wrap('privacy', () => runPrivacy(real, synth, plan, { seed, mode: st.mode, protocol: st.protocol, memberFrac: +st.memberFrac || 0.8, attested: st.attested, attacks: { mia: st.attackMia, exact: st.attackExact } }, l => prog(Math.round(done / (mods.length + 1) * 100), 'Privacy test: ' + l + '…'))); else out.privacy = { status: 'Not Run', reason: 'Disabled in evaluation settings.', attacks: [], pending: SDA.attackCatalogue.filter(a => !a.implemented).map(a => ({ id: a.id, name: a.name, short: a.short, status: 'Not applicable', reason: 'Runs in the offline Python pipeline, not in the browser (see Benchmark)' })) };
   out.ensemble = computeEnsemble(out.privacy);
   out.durationMs = Date.now() - t0; prog(100, 'Done');
   return out;
@@ -1260,7 +1260,7 @@ function engineStatuses(a, gov) {
   let ex = samp('fidelity', r.fidelity, m); add('fidelity', 'Fidelity', m[0], m[1], ex);
   m = map(r.utility, 'Disabled'); ex = samp('utility', r.utility, m); add('utility', 'Utility', m[0], m[1], ex);
   m = map(r.privacy, 'Disabled'); ex = samp('privacy', r.privacy, m);
-  const attacks = (r.privacy && r.privacy.attacks || []).map(x => ({ id: x.id, label: x.short || x.name, status: x.status === 'Completed' ? C.done : x.status === 'Failed' ? C.fail : C.skip, reason: x.error || x.reason || '', sampled: !!x.sampled })).concat((r.privacy && r.privacy.pending || []).map(x => ({ id: x.id, label: x.short || x.name, status: C.na, reason: 'Not available in this version' })));
+  const attacks = (r.privacy && r.privacy.attacks || []).map(x => ({ id: x.id, label: x.short || x.name, status: x.status === 'Completed' ? C.done : x.status === 'Failed' ? C.fail : C.skip, reason: x.error || x.reason || '', sampled: !!x.sampled })).concat((r.privacy && r.privacy.pending || []).map(x => ({ id: x.id, label: x.short || x.name, status: C.na, reason: 'Runs in the offline Python pipeline, not in the browser (see Benchmark)' })));
   add('privacy', 'Privacy', m[0], m[1], Object.assign(ex, { attacks }));
   const E = r.ensemble; add('ensemble', 'Ensemble', !E || E.status === 'Not Run' ? C.skip : E.insufficient || !E.category ? C.partial : C.done, !E || E.status === 'Not Run' ? (E && E.reason) || 'Privacy tests did not run' : E.insufficient || !E.category ? 'Evidence insufficient for a reliable category' : E.label);
   if (gov) { const fw = (a.context && a.context.frameworks) || []; const und = gov.applicability ? gov.applicability.filter(x => /undetermined/i.test(x.status || '')).length : 0;
