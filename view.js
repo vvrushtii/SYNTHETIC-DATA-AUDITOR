@@ -21,7 +21,9 @@ const bd = (label, toneOverride, icon) => ({ label, tone: toneOverride || TONE[l
 SDA.bd = bd;
 
 /* The 41-dataset study (Benchmark page, historical baselines) is for the project team only: open the site with ?team */
-const TEAM = (() => { try { return /[?&#]team\b/.test(String(location.search) + String(location.hash)); } catch (e) { return false; } })();
+// The 41-dataset study is not part of the public site: benchmark.js is not loaded, so this view is always off.
+// The study results live in the project's Google Drive folder and in pipeline/ (Colab notebooks).
+const TEAM = false;
 SDA.team = TEAM;
 const PAGES = [
   { id: 'overview', group: 'Workspace', label: 'Overview', icon: 'grid', title: 'Overview', desc: 'Your latest audit at a glance.' },
