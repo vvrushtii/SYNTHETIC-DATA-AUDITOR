@@ -1,0 +1,20 @@
+# Same library versions as the 41-dataset study (results are reproducible only with these).
+# torch (needed by SDV) is installed separately as the CPU-only build: see the Dockerfile.
+sdv==2.2.0
+sdmetrics==0.33.0
+rdt==2.1.0
+copulas==0.15.0
+ctgan==0.13.0
+deepecho==0.9.0
+numpy==2.5.4
+pandas==2.3.3
+scipy==1.18.1
+scikit-learn==1.9.1
+polars==2.1.0
+numba==0.68.1
+pyarrow==26.0.1
+joblib==1.6.0
+fastapi==0.163.0
+uvicorn==0.54.0
+python-multipart==0.0.33
+# anonymeter==1.1.0 is installed with --no-deps (its metadata pins numpy<1.27, which the study did not use)

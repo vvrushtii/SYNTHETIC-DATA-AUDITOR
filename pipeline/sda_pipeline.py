@@ -226,13 +226,14 @@ def clean(df: pd.DataFrame, cfg: dict):
     if len(df) < before:
         log.append(f"Removed {before-len(df)} rows with missing target")
 
+    keep = {tgt} | ({cfg["membership_column"]} if cfg.get("membership_column") else set())
     miss = df.isna().mean()
-    hi = [c for c in df.columns if c != tgt and miss[c] > 0.5]
+    hi = [c for c in df.columns if c not in keep and miss[c] > 0.5]
     if hi:
         df = df.drop(columns=hi)
         log.append(f"Dropped columns >50% missing: {hi}")
 
-    const = [c for c in df.columns if c != tgt and df[c].nunique(dropna=True) <= 1]
+    const = [c for c in df.columns if c not in keep and df[c].nunique(dropna=True) <= 1]
     if const:
         df = df.drop(columns=const)
         log.append(f"Dropped constant columns: {const}")
@@ -253,6 +254,26 @@ def clean(df: pd.DataFrame, cfg: dict):
 # ---------------------------------------------------------------------------
 # 2-3. split + generator
 # ---------------------------------------------------------------------------
+MEMBER_TRUE = {"1", "true", "yes", "y", "member", "in", "train", "training"}
+MEMBER_FALSE = {"0", "false", "no", "n", "holdout", "out", "test", "control", "non-member", "nonmember"}
+
+
+def membership_flags(col: pd.Series) -> list:
+    """1 = row was used to train the generator, 0 = holdout row it never saw."""
+    def one(v):
+        if pd.isna(v):
+            return None
+        if isinstance(v, (int, float, np.integer, np.floating)) and float(v) in (0.0, 1.0):
+            return int(v)
+        t = str(v).strip().lower()
+        return 1 if t in MEMBER_TRUE else 0 if t in MEMBER_FALSE else None
+    flags = [one(v) for v in col]
+    bad = sum(f is None for f in flags)
+    if bad:
+        raise ValueError(f"{bad} rows have a membership value that is not 1/0, true/false, train/holdout")
+    return flags
+
+
 def split(df, cfg):
     from sklearn.model_selection import train_test_split
     strat = None
@@ -757,12 +778,18 @@ def stage_clean(cfg, root, config_dir="."):
     ensure_original(cfg, root, config_dir)
     raw = read_original(cfg, root)
     df, log = clean(raw, cfg)
+    membership = None
+    if cfg.get("membership_column"):             # audit of synthetic data made elsewhere: the user says which rows trained it
+        membership = membership_flags(df.pop(cfg["membership_column"]))
+        log.append(f"Membership column '{cfg['membership_column']}' used for the training/holdout split and removed from the table")
     num = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
     schema = {"columns": list(df.columns), "numerical": num, "categorical": [c for c in df.columns if c not in num]}
     write_table(df, path(root, "cleaned", cfg))
     df = read_table(path(root, "cleaned", cfg), schema)          # every later stage sees exactly this table
     meta = {"dataset": cfg["name"], "slug": slug_of(cfg), "rows_original": int(len(raw)), "columns_original": int(raw.shape[1]),
             "rows_after_cleaning": int(len(df)), "schema": schema, "cleaning_log": log, "real_sha256": sha256_df(df)}
+    if membership is not None:
+        meta["membership"] = membership
     json.dump(meta, open(_mk(path(root, "meta", cfg)), "w"), indent=1)
     pa = path(root, "meta_all")                       # the same metadata for all datasets in one file
     allm = json.load(open(pa)) if os.path.exists(pa) else {}
@@ -782,7 +809,11 @@ def load_meta(cfg, root):
 def load_clean(cfg, root):
     meta = load_meta(cfg, root)
     df = read_table(path(root, "cleaned", cfg), meta["schema"])
-    members, holdout = split(df, cfg)
+    if meta.get("membership") is not None:
+        m = np.asarray(meta["membership"], dtype=bool)
+        members, holdout = df[m].reset_index(drop=True), df[~m].reset_index(drop=True)
+    else:
+        members, holdout = split(df, cfg)
     return df, members, holdout, meta
 
 
@@ -831,7 +862,8 @@ def stage_evaluate(cfg, root, gen, step, fast=False):
         st.status, st.notes = "skipped", [f"No synthetic data for this generator ({type(e).__name__})"]
         return _save_part(root, cfg, gen, st)
     cols, n_att, secrets = attack_settings(cfg, members, holdout)
-    gen_fn = lambda train, n, seed=SEED: generate(gen, train, n, cfg, seed=seed)
+    shadow_gen = cfg.get("shadow_generator") or gen
+    gen_fn = lambda train, n, seed=SEED: generate(shadow_gen, train, n, cfg, seed=seed)
     fns = {
         "fidelity": lambda: fidelity(members, syn),
         "utility": lambda: utility(members, holdout, syn, cfg),
@@ -870,7 +902,7 @@ def assemble(cfg, root, gen):
            "source": {k: v for k, v in cfg["source"].items() if k in ("uci_id",)}, "target": cfg["target"], "task": cfg["task"],
            "domain": cfg.get("domain"), "person_level": cfg.get("person_level"),
            "generator": GENERATORS[gen]["label"], "generator_key": gen,
-           "split": "80/20 training/holdout, random_state=42, stratified for classification",
+           "split": cfg.get("split_description") or "80/20 training/holdout, random_state=42, stratified for classification",
            "engine": "python", "pipeline_version": PIPELINE_VERSION, "versions": _versions(),
            "cleaning_log": meta["cleaning_log"], "rows_original": meta.get("rows_original"),
            "rows_after_cleaning": meta["rows_after_cleaning"], "columns": meta["schema"]["columns"],

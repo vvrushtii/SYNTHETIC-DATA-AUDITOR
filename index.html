@@ -11,6 +11,7 @@
 <script src="./kb.js"></script>
 <script src="./export.js"></script>
 <script src="./benchmark.js"></script>
+<script src="./config.js"></script>
 <script src="./view.js"></script>
 <script src="./fx.js"></script>
 </head>
@@ -818,9 +819,9 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
   </div></sc-for>
  </nav>
  <div class="side-foot">
-  <div class="sf-row"><span class="dot dot-green"></span><span>Engines ready · runs in this browser</span></div>
+  <div class="sf-row"><span class="dot dot-green"></span><span>Engines ready · audits run in this browser</span></div>
   <div class="sf-row"><svg class="ic"><use href="#i-info"/></svg><span>v1.0.0 · KB-0.1-draft</span></div>
-  <div class="xs">Uploaded files are never sent anywhere. Raw data is held in memory only.</div>
+  <div class="xs">Files you upload stay in this browser, in memory only. The one exception is <b>Full audit (server)</b>, which uploads them to the auditor server and deletes them when the job ends.</div>
  </div>
 </div></aside>
 
@@ -904,7 +905,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
   <div class="wbody">
 
  <sc-if value="{{na.s1}}"><section class="card">
-  <div class="card-h"><div><h3 class="card-t">Upload the pair</h3><p class="card-s">Files are read and checked in this browser tab and never sent anywhere. Raw rows are cleared when the tab is closed or reloaded; audit results (metrics, not rows) stay in this browser until you remove them.</p></div>
+  <div class="card-h"><div><h3 class="card-t">Upload the pair</h3><p class="card-s">Need all six privacy attacks? Use <button type="button" class="link-btn" onClick="{{act.goServer}}">Full audit (server)</button>, which uploads the files to the auditor server. Here, files are read and checked in this browser tab and never sent anywhere. Raw rows are cleared when the tab is closed or reloaded; audit results (metrics, not rows) stay in this browser until you remove them.</p></div>
    <sc-if value="{{na.demoOn}}"><span class="badge b-violet"><svg class="ic"><use href="#i-flask"/></svg>Demo data loaded</span></sc-if></div>
   <div class="g2">
    <sc-for list="{{na.slots}}" as="s"><div class="drop" onDragOver="{{s.over}}" onDrop="{{s.drop}}">
@@ -1039,6 +1040,67 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
 </div></sc-if>
 
 <!-- ============================ DATA CLEANING ============================ -->
+<sc-if value="{{pg.server}}"><div class="page">
+ <div class="note n-amber"><svg class="ic"><use href="#i-alert"/></svg><div class="sp"><b>Your files leave this browser.</b> In this mode the CSV files are uploaded to the auditor server, processed by the Python pipeline and deleted as soon as the job ends. Only the metrics come back. If the data must not leave this computer, use <button type="button" class="link-btn" onClick="{{act.newAudit}}">New Audit</button> instead, which runs in the browser (two of the six attacks).</div></div>
+
+ <article class="card">
+  <div class="card-h"><div><h3 class="card-t">Auditor server</h3><p class="card-s">The address of the backend that runs the Python pipeline (for example <span class="mono">https://name--sda-api-web.modal.run</span>). It is remembered in this browser.</p></div><span class="badge b-{{sv.status.tone}}"><svg class="ic"><use href="#i-{{sv.status.icon}}"/></svg>{{sv.status.label}}</span></div>
+  <div class="row" style="gap:8px;align-items:flex-end;flex-wrap:wrap">
+   <div class="field" style="flex:1;min-width:240px"><label for="sv-url">Server address</label><input id="sv-url" type="text" inputmode="url" name="sv.urlDraft" value="{{sv.urlField}}" onChange="{{act.setField}}" placeholder="https://your-name--sda-api-web.modal.run" autocomplete="off" spellcheck="false"></div>
+   <button type="button" class="btn" onClick="{{sv.saveUrl}}"><svg class="ic"><use href="#i-check"/></svg>Save and check</button>
+  </div>
+  <sc-if value="{{sv.checking}}"><p class="small mute mt">Contacting the server… A server that has been idle can take about a minute to wake up.</p></sc-if>
+  <sc-if value="{{sv.hasErr}}"><div class="note n-red mt"><svg class="ic"><use href="#i-x"/></svg><div>{{sv.err}}</div></div></sc-if>
+  <sc-if value="{{sv.online}}"><dl class="kv mt"><sc-for list="{{sv.limits}}" as="l"><dt>{{l.k}}</dt><dd>{{l.v}}</dd></sc-for><dt>Data handling</dt><dd>{{sv.policy}}</dd><dt>Queue</dt><dd>{{sv.queue}}</dd><dt>Libraries</dt><dd class="small">{{sv.versions}}</dd></dl></sc-if>
+ </article>
+
+ <sc-if value="{{sv.job.has}}"><article class="card">
+  <div class="card-h"><div><h3 class="card-t">Audit job<sc-if value="{{sv.job.name}}"> · {{sv.job.name}}</sc-if></h3><p class="card-s">{{sv.job.label}}<sc-if value="{{sv.job.count}}"> · {{sv.job.count}}</sc-if></p></div><span class="badge b-{{sv.job.bd.tone}}"><svg class="ic"><use href="#i-{{sv.job.bd.icon}}"/></svg>{{sv.job.bd.label}}</span></div>
+  <sc-if value="{{sv.job.hasSteps}}"><div class="tw"><table class="t"><thead><tr><th>Step</th><th>Status</th><th class="num">Time</th></tr></thead><tbody><sc-for list="{{sv.job.steps}}" as="s"><tr><td>{{s.label}}</td><td><span class="badge b-{{s.bd.tone}}"><svg class="ic"><use href="#i-{{s.bd.icon}}"/></svg>{{s.bd.label}}</span></td><td class="num mono">{{s.secs}}</td></tr></sc-for></tbody></table></div></sc-if>
+  <sc-if value="{{sv.job.running}}"><p class="small mute mt">Small tables take about a minute; large ones (tens of thousands of rows) can take 10–20 minutes. You can leave this page open in the background.</p></sc-if>
+  <sc-if value="{{sv.job.hasError}}"><div class="note n-red mt"><svg class="ic"><use href="#i-x"/></svg><div>{{sv.job.error}}</div></div></sc-if>
+  <sc-if value="{{sv.job.done}}"><div class="note n-green mt"><svg class="ic"><use href="#i-check"/></svg><div>The result has been added to the <b>Benchmark</b> page in this browser, next to the 41 study datasets.<sc-if value="{{sv.job.deleted}}"> The server has deleted the uploaded files.</sc-if></div></div></sc-if>
+  <div class="cta-row mt">
+   <sc-if value="{{sv.job.done}}"><button type="button" class="btn btn-primary" onClick="{{sv.job.open}}"><svg class="ic"><use href="#i-bench"/></svg>Open the result</button><button type="button" class="btn" onClick="{{sv.job.download}}"><svg class="ic"><use href="#i-download"/></svg>Download result (.json)</button></sc-if>
+   <sc-if value="{{sv.job.canCancel}}"><button type="button" class="btn btn-danger" onClick="{{sv.job.cancel}}"><svg class="ic"><use href="#i-x"/></svg>Cancel job</button></sc-if>
+   <sc-if value="{{sv.job.ended}}"><button type="button" class="btn" onClick="{{sv.job.again}}"><svg class="ic"><use href="#i-plus"/></svg>Start another</button></sc-if>
+  </div>
+ </article></sc-if>
+
+ <article class="card">
+  <div class="card-h"><div><h3 class="card-t">What should the server do?</h3><p class="card-s">Both options run cleaning, fidelity, utility and all six privacy attacks with the same code as the 41-dataset study.</p></div></div>
+  <div class="seg"><sc-for list="{{sv.modes}}" as="m"><button type="button" class="{{m.cls}}" onClick="{{m.pick}}" disabled="{{sv.locked}}"><span class="b">{{m.label}}</span><span class="xs mute">{{m.desc}}</span></button></sc-for></div>
+ </article>
+
+ <article class="card">
+  <div class="card-h"><div><h3 class="card-t">Files</h3><p class="card-s">Comma-separated CSV files with a header row. Columns are matched by name.</p></div></div>
+  <div class="g2">
+   <sc-for list="{{sv.slots}}" as="s"><div class="drop">
+    <div class="drop-h"><strong>{{s.title}}</strong><sc-if value="{{s.has}}"><span class="badge b-green"><svg class="ic"><use href="#i-check"/></svg>Ready</span></sc-if><sc-if value="{{!s.has}}"><sc-if value="{{s.need}}"><span class="badge b-grey"><svg class="ic"><use href="#i-clock"/></svg>Needed</span></sc-if></sc-if></div>
+    <p class="xs mute">{{s.sub}}</p>
+    <sc-if value="{{s.has}}"><dl class="fgrid"><dt>File</dt><dd>{{s.name}}</dd><dt>Size</dt><dd>{{s.size}}</dd><dt>Shape</dt><dd>{{s.rows}}</dd></dl></sc-if>
+    <sc-if value="{{s.hasWarn}}"><div class="note n-amber"><svg class="ic"><use href="#i-alert"/></svg><div>{{s.warn}}</div></div></sc-if>
+    <div class="row"><label class="btn btn-sm" for="{{s.inputId}}"><svg class="ic"><use href="#i-upload"/></svg>{{s.label}}</label><input class="sr" id="{{s.inputId}}" type="file" accept=".csv,text/csv" onChange="{{s.pick}}" disabled="{{s.disabled}}"><sc-if value="{{s.has}}"><button type="button" class="btn btn-sm btn-danger" onClick="{{s.remove}}" disabled="{{s.disabled}}"><svg class="ic"><use href="#i-trash"/></svg>Remove</button></sc-if></div>
+   </div></sc-for>
+  </div>
+  <sc-if value="{{sv.noHold}}"><div class="note n-amber mt"><svg class="ic"><use href="#i-alert"/></svg><div>Without holdout rows (a holdout file or a membership column) only fidelity can be measured. The utility test and the six privacy attacks will be reported as <b>not run</b>, which is not evidence of low risk.</div></div></sc-if>
+ </article>
+
+ <article class="card">
+  <div class="card-h"><div><h3 class="card-t">Settings</h3><p class="card-s">The target is the column a model would predict; it is also the default secret for the attribute-inference attack.</p></div></div>
+  <div class="g2">
+   <div class="field"><label for="sv-target">Target column</label><select id="sv-target" name="sv.target" value="{{sv.target}}" onChange="{{act.setField}}" disabled="{{sv.locked}}"><sc-for list="{{sv.targets}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+   <div class="field"><label for="sv-task">Task <sc-if value="{{sv.taskHint}}"><span class="hint">({{sv.taskHint}})</span></sc-if></label><select id="sv-task" name="sv.task" value="{{sv.task}}" onChange="{{act.setField}}" disabled="{{sv.locked}}"><option value="">Choose…</option><option value="classification">Classification</option><option value="regression">Regression</option></select></div>
+   <sc-if value="{{sv.gen}}"><div class="field"><label for="sv-gen">Generator</label><select id="sv-gen" name="sv.generator" value="{{sv.generator}}" onChange="{{act.setField}}" disabled="{{sv.locked}}"><sc-for list="{{sv.gens}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div></sc-if>
+   <sc-if value="{{sv.audit}}"><div class="field"><label for="sv-mem">Membership column <span class="hint">(optional: 1 = training row, 0 = holdout row)</span></label><select id="sv-mem" name="sv.memCol" value="{{sv.memCol}}" onChange="{{act.setField}}" disabled="{{sv.locked}}"><sc-for list="{{sv.memOpts}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div></sc-if>
+   <div class="field"><label for="sv-name">Dataset name <span class="hint">(shown on the Benchmark page)</span></label><input id="sv-name" type="text" name="sv.name" value="{{sv.name}}" onChange="{{act.setField}}" placeholder="e.g. Hospital admissions 2024" disabled="{{sv.locked}}"></div>
+  </div>
+  <sc-if value="{{sv.hasSens}}"><div class="field mt"><label>Sensitive columns for attribute inference <span class="hint">(optional; the target is used if none are chosen)</span></label><div class="chips"><sc-for list="{{sv.sensOpts}}" as="c"><button type="button" class="{{c.cls}}" aria-pressed="{{c.on}}" onClick="{{c.toggle}}" disabled="{{sv.locked}}">{{c.label}}</button></sc-for></div></div></sc-if>
+  <sc-if value="{{sv.hasProblems}}"><div class="col mt" style="gap:6px"><sc-for list="{{sv.problems}}" as="p"><div class="note n-grey"><svg class="ic"><use href="#i-info"/></svg><div>{{p}}</div></div></sc-for></div></sc-if>
+  <div class="cta-row mt"><button type="button" class="btn btn-primary" onClick="{{sv.submit}}" disabled="{{!sv.canSubmit}}"><svg class="ic"><use href="#i-play"/></svg>{{sv.submitLabel}}</button></div>
+ </article>
+</div></sc-if>
+
 <sc-if value="{{pg.clean}}"><div class="page">
  <sc-if value="{{!cl.has}}"><div class="empty"><div class="empty-ic"><svg class="ic"><use href="#i-wand"/></svg></div><h3>Start with your original dataset</h3><p>Choose the real (original) CSV to inspect and clean. The upload itself never changes: cleaning works on a copy you can download or pass straight into an audit.</p>
   <sc-if value="{{cl.hasRealErr}}"><div class="note n-red" style="text-align:left;max-width:560px"><svg class="ic"><use href="#i-x"/></svg><div><b>{{cl.realName}}</b> · {{cl.realErr}}</div></div></sc-if>
@@ -1305,7 +1367,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
 <sc-if value="{{pg.privacy}}"><div class="page">
  <sc-if value="{{!pr.has}}"><div class="empty"><div class="empty-ic"><svg class="ic"><use href="#i-lock"/></svg></div><h3>No privacy tests have run</h3><p>{{empty.text}} Attack records appear here as separate cards once the privacy module has run.</p><div class="cta-row"><button type="button" class="btn btn-primary" onClick="{{empty.newAudit}}">Start New Audit</button><button type="button" class="btn" onClick="{{empty.demo}}">Load demo pair</button><button type="button" class="btn" onClick="{{empty.goBench}}"><svg class="ic"><use href="#i-bench"/></svg>Six-attack benchmark</button></div></div></sc-if>
  <sc-if value="{{pr.has}}">
-  <div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div class="sp"><b>{{pr.summary}}.</b> This browser runs 2 of the 6 attack types. The other four need Python libraries, so they run in the offline pipeline; they are shown here as not applicable, never as completed. <button type="button" class="more" onClick="{{pr.goBench}}">See all six on 41 public datasets</button></div><span class="badge b-{{pr.kind.tone}}"><svg class="ic"><use href="#i-{{pr.kind.icon}}"/></svg>{{pr.kind.label}}</span></div>
+  <div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div class="sp"><b>{{pr.summary}}.</b> This browser runs 2 of the 6 attack types. The other four need Python libraries, so they run on the auditor server (<button type="button" class="link-btn" onClick="{{act.goServer}}">Full audit (server)</button>); here they are shown as not applicable, never as completed. <button type="button" class="more" onClick="{{pr.goBench}}">See all six on 41 public datasets</button></div><span class="badge b-{{pr.kind.tone}}"><svg class="ic"><use href="#i-{{pr.kind.icon}}"/></svg>{{pr.kind.label}}</span></div>
   <sc-for list="{{pr.cards}}" as="c"><article class="{{c.cls}}">
    <div class="card-h"><div><h3 class="card-t">{{c.name}}</h3><p class="card-s" style="max-width:760px">{{c.desc}}</p></div><span class="badge b-{{c.bd.tone}}"><svg class="ic"><use href="#i-{{c.bd.icon}}"/></svg>{{c.bd.label}}</span></div>
    <sc-if value="{{c.hasMsg}}"><div class="note n-grey"><svg class="ic"><use href="#i-dash"/></svg><div>{{c.msg}}</div></div></sc-if>
@@ -1539,10 +1601,10 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
    <p class="mini">Membership AUCs: chance 0.5. Exact match: percentage points of training rows copied beyond the holdout rate. Singling-out (4-column), linkability and attribute inference (highest secret column): Anonymeter risk, 0 = no excess over the holdout rows, 1 = every attack succeeds. Fidelity uses the SDMetrics package here, so it can differ slightly from this browser’s re-implementation.</p>
   </article>
 
-  <article class="card"><div class="card-h"><div><h3 class="card-t">Import pipeline results</h3><p class="card-s">Run the Python pipeline in Colab (<span class="mono">run_in_colab.ipynb</span>, which calls <span class="mono">sda_pipeline.py</span>) on any dataset, then import the per-dataset <span class="mono">.json</span> files it writes. They hold metrics only, no data rows. Only the metrics are read and kept, in this browser.</p></div></div>
+  <article class="card"><div class="card-h"><div><h3 class="card-t">Import pipeline results</h3><p class="card-s">Results of the Python pipeline (<span class="mono">pipeline/sda_pipeline.py</span>, or the study's Colab notebooks) can be imported here: per-dataset <span class="mono">.json</span> files or the <span class="mono">all_results_*.json</span> bundles. They hold metrics only, no data rows. Only the metrics are read and kept, in this browser.</p></div></div>
    <div class="cta-row"><label class="btn btn-primary" for="bn-file"><svg class="ic"><use href="#i-upload"/></svg>Choose result files (.json)</label><input class="sr" id="bn-file" type="file" multiple accept=".json,application/json" onChange="{{bn.pick}}"><sc-if value="{{bn.hasImp}}"><button type="button" class="btn" onClick="{{bn.removeAll}}"><svg class="ic"><use href="#i-trash"/></svg>Remove all {{bn.impCount}} imported</button></sc-if></div>
    <sc-if value="{{bn.hasImp}}"><div class="tw mt"><table class="t"><thead><tr><th>Imported dataset</th><th>Generator</th><th><span class="sr">Remove</span></th></tr></thead><tbody><sc-for list="{{bn.imp}}" as="i"><tr><td class="b">{{i.name}}</td><td class="small">{{i.gen}}</td><td class="num"><button type="button" class="more" onClick="{{i.remove}}">Remove</button></td></tr></sc-for></tbody></table></div></sc-if>
-   <p class="xs mute mt">Uploads to New Audit still run the two browser attacks only. The other four need Python libraries (SDV, Anonymeter) that cannot run in a web page.</p>
+   <p class="xs mute mt">New Audit runs the two browser attacks only. To run all six on your own data, use <button type="button" class="link-btn" onClick="{{act.goServer}}">Full audit (server)</button>; its results appear here too.</p>
   </article>
  </div></sc-if>
 </div></sc-if>
@@ -1640,11 +1702,14 @@ constructor(props) {
     page: 'overview', audits: [], kbState: {}, currentId: null, includeDemo: false, draft: this.newDraft(), busy: null, progress: { pct: 0, label: '' }, flash: null,
     cl: this.blankCl(), ui: { regEngine: 'all', vaDraft: false, vaFilter: 'all', fidCol: null, fidTab: 'dist', fidSort: 'score', fidDir: 'asc', utTab: 'metrics', utMetric: null, gvTab: 'frameworks', fwType: 'all', kbFw: 'all', mapFw: 'all', mapSuf: 'all', mapRev: 'all' },
     cmp: { q: '', domain: '', task: '', generator: '', status: '', source: '', sort: 'name' }, kbForm: {}, rvForm: {}, exportLog: {}, confirmDel: null, confirmClearAll: false,
-    bn: { q: '', group: '', task: '', sig: '', sort: 'name', sel: null }, benchImported: []
+    bn: { q: '', group: '', task: '', sig: '', sort: 'name', sel: null }, benchImported: [],
+    sv: this.blankSv('')
   };
+  this.svFiles = {}; this.svTimer = null;
   this.A = this.makeActions();
 }
 newDraft() { return { step: 1, info: Object.assign({}, SDA.defaults.info), settings: Object.assign({}, SDA.defaults.settings), gov: SDA.kb.defaultContext(), realMeta: null, synthMeta: null, validation: null, rawValidation: null, validated: false, demo: false, hints: { cat: [], ids: [] }, suggestion: null, taskHint: null, use: { real: 'raw', synth: 'raw' }, editingAuditId: null }; }
+blankSv(url) { return { url: url || '', urlDraft: null, health: null, healthError: '', checking: false, mode: 'generate', generator: 'gc', target: '', task: '', taskHint: '', name: '', sens: [], memCol: '', files: {}, job: null, submitting: false }; }
 blankCl() { return { which: 'real', steps: { real: [], synth: [] }, log: { real: [], synth: [] }, prof: { real: null, synth: null }, table: { real: null, synth: null }, compat: { real: null, synth: null }, form: { op: '' }, preview: null, confirm: false, view: 'after' }; }
 dataFor(D) { const u = (D || this.state.draft).use || {}; return { real: u.real === 'cleaned' && this.clean.real ? this.clean.real : this.raw.real, synth: u.synth === 'cleaned' && this.clean.synth ? this.clean.synth : this.raw.synth }; }
 componentDidMount() {
@@ -1656,7 +1721,9 @@ componentDidMount() {
     const b = JSON.parse(localStorage.getItem('sda.v1.bench') || '[]');
     if (Array.isArray(b)) this.setState({ benchImported: b.filter(r => r && typeof r.key === 'string' && typeof r.name === 'string' && Array.isArray(r.attacks) && r.attacks.length === 6 && r.fid && r.util).slice(0, 200) });
   } catch (e) { /* storage unavailable or empty */ }
+  this.svInit();
 }
+componentWillUnmount() { clearTimeout(this.svTimer); }
 persist() {
   try {
     let list = this.state.audits.slice(-8);
@@ -1682,6 +1749,114 @@ async importBench(files) {
   if (got.length) this.setState(s => { const keep = s.benchImported.filter(x => !got.some(g => g.key === x.key)); return { benchImported: keep.concat(got).slice(-200), bn: Object.assign({}, s.bn, { group: '', sel: null }) }; }, () => this.persistBench());
   const msg = (got.length ? 'Imported ' + got.length + ' result' + (got.length === 1 ? '' : 's') + '.' : 'Nothing imported.') + (skipped.length ? ' Skipped ' + skipped.length + ': ' + skipped.slice(0, 3).join('; ') + (skipped.length > 3 ? '; …' : '') : '');
   this.flash(msg, got.length ? (skipped.length ? 'warn' : 'ok') : 'err');
+}
+/* ───────── full audit on the server (backend API) ───────── */
+svInit() {
+  let url = '', job = null;
+  try { url = localStorage.getItem('sda.v1.server') || ''; job = JSON.parse(localStorage.getItem('sda.v1.svjob') || 'null'); } catch (e) { /* storage blocked */ }
+  if (!url) url = (SDA.config && SDA.config.backendUrl) || '';
+  this.setState(s => ({ sv: Object.assign({}, s.sv, { url }) }), () => {
+    if (url) this.svCheck();
+    if (job && job.id && job.url === url) { this.setState(s => ({ sv: Object.assign({}, s.sv, { job: { id: job.id, status: 'queued', steps: [], name: job.name || '' } }) })); this.svPoll(job.id); }
+  });
+}
+svBase() { return String(this.state.sv.url || '').trim().replace(/\/+$/, ''); }
+svSet(o) { this.setState(s => ({ sv: Object.assign({}, s.sv, o) })); }
+async svFetch(path, opts, timeoutMs) {
+  const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null; const t = ctl ? setTimeout(() => ctl.abort(), timeoutMs || 30000) : null;
+  let r;
+  try { r = await fetch(this.svBase() + path, Object.assign({ signal: ctl ? ctl.signal : undefined }, opts || {})); }
+  catch (e) { throw new Error(e && e.name === 'AbortError' ? 'The server did not answer in time. If it was asleep it is probably starting now: try again in a minute.' : 'Could not reach the server (' + ((e && e.message) || 'network error') + '). Check the address, and that the server allows requests from this site.'); }
+  finally { if (t) clearTimeout(t); }
+  let body = null; try { body = await r.json(); } catch (e) { body = null; }
+  if (!r.ok) { const d = body && body.detail; const msg = typeof d === 'string' ? d : Array.isArray(d) ? d.map(x => (x.loc ? x.loc.slice(-1)[0] + ': ' : '') + x.msg).join('; ') : ''; const err = new Error(msg || ('The server answered with HTTP ' + r.status + (r.status === 503 ? ' (it may be starting up: try again in a minute)' : '') + '.')); err.status = r.status; throw err; }
+  if (body === null) throw new Error('The server sent an unexpected answer. Is this the address of the auditor API?');
+  return body;
+}
+async svCheck() {
+  if (!this.svBase()) return;
+  this.svSet({ checking: true, healthError: '' });
+  try { const h = await this.svFetch('/api/health', null, 70000); if (!h || h.service !== 'synthetic-data-auditor') throw new Error('This address answered, but it is not the Synthetic Data Auditor API.'); this.svSet({ health: h, checking: false }); }
+  catch (e) { this.svSet({ health: null, healthError: e.message || String(e), checking: false }); }
+}
+svSaveUrl() {
+  const raw = String(this.state.sv.urlDraft === null ? this.state.sv.url : this.state.sv.urlDraft).trim().replace(/\/+$/, '');
+  if (raw && !/^https?:\/\/[^\s/]+/i.test(raw)) { this.flash('The server address must start with https:// (or http:// for a local test).', 'err'); return; }
+  try { if (raw) localStorage.setItem('sda.v1.server', raw); else localStorage.removeItem('sda.v1.server'); } catch (e) { /* storage blocked: kept for this visit */ }
+  this.setState(s => ({ sv: Object.assign({}, s.sv, { url: raw, urlDraft: null, health: null, healthError: '' }) }), () => { if (raw) this.svCheck(); });
+}
+async svReadFile(key, file) {
+  const meta = { name: file.name, size: file.size, headers: [], cols: 0, rows: null, warn: '' };
+  try {
+    if (file.size <= 25 * 1048576) {
+      const text = await file.text(); const ds = SDA.csv.makeDataset(file.name, text, file.size);
+      meta.headers = ds.headers; meta.cols = ds.headers.length; meta.rows = ds.nrows;
+      if (ds.delimiter && ds.delimiter !== ',') meta.warn = 'This file uses “' + (ds.delimiter === '\t' ? 'tab' : ds.delimiter) + '” between values. The server reads comma-separated files only; save it as a comma-separated CSV first.';
+      if (key === 'real') this.svDs = ds;
+    } else {
+      const head = await file.slice(0, 262144).text(); const first = head.split(/\r?\n/)[0];
+      const ds = SDA.csv.makeDataset(file.name, first + '\n', first.length); meta.headers = ds.headers; meta.cols = ds.headers.length;
+      if (ds.delimiter && ds.delimiter !== ',') meta.warn = 'This file does not look comma-separated. The server reads comma-separated files only; save it as a comma-separated CSV first.';
+      if (key === 'real') this.svDs = null;
+    }
+  } catch (e) { this.flash('Could not read ' + file.name + ': ' + (e.message || e), 'err'); return; }
+  if (!meta.cols) { this.flash(file.name + ' has no header row.', 'err'); return; }
+  this.svFiles[key] = file;
+  this.setState(s => { const V = s.sv; const o = { files: Object.assign({}, V.files, { [key]: meta }) };
+    if (key === 'real') { const h = meta.headers; if (!V.target || h.indexOf(V.target) < 0) { const sg = this.svDs ? SDA.utility.suggestTarget(this.svDs, []) : null; o.target = sg ? sg.col : ''; o.task = sg ? sg.task : ''; o.taskHint = sg ? 'suggested from the data' : ''; }
+      o.sens = (V.sens || []).filter(c => h.indexOf(c) >= 0); if (V.memCol && h.indexOf(V.memCol) < 0) o.memCol = '';
+      if (!V.name) o.name = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim().slice(0, 80); }
+    return { sv: Object.assign({}, V, o) }; });
+}
+svTarget(col) {
+  const t = col && this.svDs ? SDA.utility.suggestTask(this.svDs, col) : null;
+  this.setState(s => ({ sv: Object.assign({}, s.sv, { target: col, task: t ? t.task : s.sv.task, taskHint: t ? t.why : '', sens: (s.sv.sens || []).filter(c => c !== col) }) }));
+}
+async svSubmit() {
+  const V = this.state.sv; const vm = SDA.view.build(this.state, this.A).sv; if (!vm || !vm.canSubmit) return;
+  const fd = new FormData();
+  fd.append('mode', V.mode); fd.append('target', V.target); fd.append('task', V.task); fd.append('name', V.name || '');
+  if (V.mode === 'generate') fd.append('generator', V.generator);
+  if ((V.sens || []).length) fd.append('sensitive_columns', V.sens.join(','));
+  fd.append('real', this.svFiles.real, this.svFiles.real.name);
+  if (V.mode === 'audit') { fd.append('synthetic', this.svFiles.synth, this.svFiles.synth.name); if (V.files.hold && this.svFiles.hold) fd.append('holdout', this.svFiles.hold, this.svFiles.hold.name); if (V.memCol) fd.append('membership_column', V.memCol); }
+  this.svSet({ submitting: true });
+  try {
+    const j = await this.svFetch('/api/jobs', { method: 'POST', body: fd }, 300000);
+    const job = Object.assign({}, j, { name: V.name || '' });
+    try { localStorage.setItem('sda.v1.svjob', JSON.stringify({ id: j.id, url: this.svBase(), name: job.name })); } catch (e) { /* storage blocked */ }
+    this.svSet({ submitting: false, job }); this.flash('Uploaded. The server is running the audit.', 'ok'); this.svPoll(j.id);
+    try { window.scrollTo(0, 0); } catch (e) { /* ignore */ }
+  } catch (e) { this.svSet({ submitting: false }); this.flash('The server did not accept the job: ' + (e.message || e), 'err'); }
+}
+svPoll(id) {
+  clearTimeout(this.svTimer);
+  const tick = async () => {
+    if (!this.state.sv.job || this.state.sv.job.id !== id) return;
+    let j;
+    try { j = await this.svFetch('/api/jobs/' + id, null, 30000); }
+    catch (e) {
+      if (e.status === 404) { this.svForget(); this.setState(s => ({ sv: Object.assign({}, s.sv, { job: Object.assign({}, s.sv.job, { status: 'failed', lost: true, error: 'The server no longer has this job. Results are kept for a limited time and are lost if the server restarts. Please run it again.' }) }) })); return; }
+      this.svTimer = setTimeout(tick, 8000); return;            // a network blip: keep trying
+    }
+    this.setState(s => ({ sv: Object.assign({}, s.sv, { job: Object.assign({ name: s.sv.job && s.sv.job.name }, j) }) }));
+    if (j.status === 'completed') this.svDone(j);
+    else if (j.status === 'failed' || j.status === 'cancelled') this.svForget();
+    else this.svTimer = setTimeout(tick, j.status === 'queued' ? 4000 : 2500);
+  };
+  this.svTimer = setTimeout(tick, 600);
+}
+svForget() { try { localStorage.removeItem('sda.v1.svjob'); } catch (e) { /* ignore */ } }
+svDone(j) {
+  this.svForget();
+  let r; try { r = SDA.benchNormalize(j.result, 'imported'); } catch (e) { this.flash('The server returned a result this page cannot read: ' + (e.message || e), 'err'); return; }
+  this.svResultKey = r.key;
+  this.setState(s => ({ benchImported: s.benchImported.filter(x => x.key !== r.key).concat([r]).slice(-200) }), () => { this.persistBench(); this.flash('Full audit finished: ' + r.completed + ' of 6 attacks completed. The result is on the Benchmark page.', 'ok'); });
+}
+async svCancel() {
+  const J = this.state.sv.job; if (!J) return;
+  try { await this.svFetch('/api/jobs/' + J.id, { method: 'DELETE' }, 20000); this.flash('Cancelling the job. The server deletes the uploaded files.', 'info'); }
+  catch (e) { this.flash('Could not cancel: ' + (e.message || e), 'err'); }
 }
 flash(text, tone) {
   clearTimeout(this.flashTimer); this.setState({ flash: { text, tone: tone || 'info' } });
@@ -1936,6 +2111,7 @@ makeActions() {
       const dot = name.indexOf('.'); const root = name.slice(0, dot), key = name.slice(dot + 1);
       if (root === 'cmp') { this.setState(s => ({ cmp: Object.assign({}, s.cmp, { [key]: val }) })); return; }
       if (root === 'bn') { this.setState(s => ({ bn: Object.assign({}, s.bn, { [key]: val }) })); return; }
+      if (root === 'sv') { if (key === 'target') { this.svTarget(val); return; } this.setState(s => ({ sv: Object.assign({}, s.sv, { [key]: val }, key === 'task' ? { taskHint: '' } : {}) })); return; }
       if (root === 'ui') { this.setState(s => ({ ui: Object.assign({}, s.ui, { [key]: val }) })); return; }
       const inval = ['info.target', 'info.task', 'info.categorical', 'info.idCols', 'settings.matchedOnly', 'settings.protocol', 'settings.membershipCol'].indexOf(name) >= 0;
       this.mutDraft(d => { d[root] = Object.assign({}, d[root], { [key]: val }); if (name === 'info.task') d.settings = Object.assign({}, d.settings, { primary: '' }); if (name === 'info.target' && this.raw.real) { const t = SDA.utility.suggestTask(this.raw.real, String(val).trim()); if (t) d.info = Object.assign({}, d.info, { task: t.task }); d.settings = Object.assign({}, d.settings, { primary: '' }); } }, inval);
@@ -1964,6 +2140,15 @@ makeActions() {
     bnOpen: key => () => { this.setState(s => ({ bn: Object.assign({}, s.bn, { sel: key }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
     bnOpenPage: key => () => { this.setState(s => ({ page: 'bench', confirmDel: null, bn: Object.assign({}, s.bn, { sel: key }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
     bnClose: () => this.setState(s => ({ bn: Object.assign({}, s.bn, { sel: null }) })),
+    goServer: () => { this.setState({ page: 'server', confirmDel: null }); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
+    svCheck: () => this.svCheck(), svSaveUrl: () => this.svSaveUrl(), svSubmit: () => this.svSubmit(), svCancel: () => this.svCancel(),
+    svMode: m => () => this.setState(s => ({ sv: Object.assign({}, s.sv, { mode: m }) })),
+    svPick: key => e => { const f = e.target.files && e.target.files[0]; try { e.target.value = ''; } catch (x) { /* ignore */ } if (f) this.svReadFile(key, f); },
+    svRemove: key => () => { delete this.svFiles[key]; if (key === 'real') this.svDs = null; this.setState(s => { const files = Object.assign({}, s.sv.files); delete files[key]; return { sv: Object.assign({}, s.sv, { files }, key === 'real' ? { target: '', task: '', taskHint: '', sens: [], memCol: '' } : {}) }; }); },
+    svSens: col => () => this.setState(s => { const a = (s.sv.sens || []).slice(); const i = a.indexOf(col); if (i >= 0) a.splice(i, 1); else a.push(col); return { sv: Object.assign({}, s.sv, { sens: a }) }; }),
+    svOpenResult: () => { const k = this.svResultKey; if (!k) return; this.setState(s => ({ page: 'bench', bn: Object.assign({}, s.bn, { sel: k }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
+    svDownload: () => { const J = this.state.sv.job; if (!J || !J.result) return; const nm = String(J.result.dataset || 'server_audit').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 60) || 'server_audit'; this.saveFile(nm + '_' + (J.result.generator_key || 'result') + '.json', JSON.stringify(J.result, null, 1), 'JSON', true); },
+    svNew: () => { clearTimeout(this.svTimer); this.svForget(); this.svFiles = {}; this.svDs = null; this.setState(s => ({ sv: Object.assign(this.blankSv(s.sv.url), { health: s.sv.health, mode: s.sv.mode, generator: s.sv.generator }) })); },
     bnClear: () => this.setState(s => ({ bn: { q: '', group: '', task: '', sig: '', sort: 'name', sel: s.bn.sel } })),
     bnImport: e => { const fl = Array.from((e.target && e.target.files) || []); try { e.target.value = ''; } catch (x) { /* ignore */ } this.importBench(fl); },
     bnRemove: key => () => this.setState(s => ({ benchImported: s.benchImported.filter(x => x.key !== key), bn: Object.assign({}, s.bn, { sel: s.bn.sel === key ? null : s.bn.sel }) }), () => { this.persistBench(); this.flash('Imported result removed from this browser.', 'info'); }),

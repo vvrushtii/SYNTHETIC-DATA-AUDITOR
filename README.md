@@ -2,9 +2,12 @@
 
 Audit a synthetic dataset against its real source: data validation, fidelity, utility, privacy tests, ensemble risk, governance mapping and a downloadable report.
 
-**Everything runs in the visitor's browser.** Uploaded CSVs are never sent to a server; there is no backend, database or API key.
+There are two ways to run an audit:
 
-The browser runs 2 of the 6 privacy attacks (distance-based membership inference and exact match). The other four (shadow-model membership inference, singling-out, linkability, attribute inference) need Python libraries (SDV, Anonymeter), so they run offline in `pipeline/sda_pipeline.py`. Their results are shown on the **Benchmark** page: 41 datasets are bundled in `benchmark.js`, and visitors can import more pipeline result files (`*.json`).
+- **New Audit (in the browser).** Files never leave the visitor's browser. Runs validation, cleaning, fidelity, utility and 2 of the 6 privacy attacks (distance-based membership inference and exact match).
+- **Full audit (server).** Files are uploaded to the backend API (`backend/`, hosted on Modal), which runs the Python pipeline `pipeline/sda_pipeline.py`: cleaning, optional generation (SDV GaussianCopula or the project copula), fidelity, utility and all 6 privacy attacks (adding shadow-model membership inference, singling-out, linkability and attribute inference). Files are deleted when the job ends; only metrics come back.
+
+The **Benchmark** page shows the 41-dataset study (bundled in `benchmark.js`), server audits, and any imported pipeline result files (`*.json`).
 
 ## Architecture
 
@@ -18,19 +21,25 @@ The browser runs 2 of the 6 privacy attacks (distance-based membership inference
 | Results → page view-model, Benchmark page | Browser | `view.js` |
 | Six-attack benchmark results for 41 UCI datasets (metrics only, computed offline by `pipeline/sda_pipeline.py`) | Browser (static data) | `benchmark.js` |
 | Theme switch, search palette, chart tooltips | Browser | `fx.js` |
+| Site settings: backend API address | Browser | `config.js` |
+| Full-audit page (upload, progress, results) | Browser | `index.html`, `view.js` |
+| Backend API: job queue, uploads, deletion after each run | Modal (or any Docker host) | `backend/app.py` |
+| One audit job, run in its own process | Modal (or any Docker host) | `backend/worker.py` |
+| Evaluation pipeline (same code as the 41-dataset study) | Modal, Colab | `pipeline/sda_pipeline.py` |
 | Hosting config (security headers) | Vercel | `vercel.json` |
 
-There is no build step, so this folder is deployed as it is.
+The website has no build step, so this folder is deployed to Vercel as it is. The backend is a Docker image (`backend/Dockerfile`); see `backend/README.md`.
 
 **Data handling**
 - Uploaded files are read in memory only and cleared when the tab is closed or reloaded.
 - Audit results (metrics only, not rows) are saved in the visitor's own browser storage (`localStorage`, keys `sda.v1.*`). Visitors can delete an audit from the Reports page or clear site data.
-- Imported pipeline results are reduced to their metrics and kept under `sda.v1.bench`; they can be removed on the Benchmark page.
+- Imported pipeline results and server audits are reduced to their metrics and kept under `sda.v1.bench`; they can be removed on the Benchmark page.
+- **Full audit (server)** uploads the CSVs to the backend. The backend keeps them only inside the job's temporary folder and deletes it when the job ends (finished, failed, cancelled or timed out). It keeps the metrics in memory for 60 minutes so the page can fetch them, never logs data values or IP addresses, and limits each visitor to 6 jobs per hour.
 
 **Updating the benchmark:** after a new pipeline run, rebuild the bundled file with `python3 tools/make_benchmark_js.py <results folder> benchmark.js` and commit `benchmark.js`.
 - `.gitignore` blocks `*.csv`, `*.xlsx` and other data files so datasets can't be committed by mistake.
 
-**Environment variables:** none needed. (A future Python backend would add an API address variable; see "Next steps".)
+**Settings:** the website needs no environment variables. Put the backend's address in `config.js` (`backendUrl`), or let visitors type it on the Full audit (server) page. Backend settings (allowed origins, limits) are environment variables of the Space; see `backend/README.md`.
 
 ## Run locally
 
@@ -82,9 +91,14 @@ Run these in this folder. The command-line tool needs Node.js (https://nodejs.or
 
 - The engines are JavaScript re-implementations of the notebook methods (SDMetrics-style column shapes and pair trends, scikit-learn-style models). Numbers can differ from the Colab baselines.
 - Fidelity is computed on a seeded sample of up to 5,000 rows by default. Very large files (for example Covertype, 75 MB) are slow, because everything runs in the visitor's browser tab.
-- Shadow-model MIA, attribute inference, singling-out and linkability are shown as "not available in this version".
+- In the browser, shadow-model MIA, attribute inference, singling-out and linkability are shown as not applicable; they run on the server page.
+- The backend on Modal has 2 CPUs and 8 GB and runs one job at a time; large tables (tens of thousands of rows) take 10-20 minutes. After 5 minutes without requests it stops, and the next request takes up to about a minute to start it again.
 - Governance mappings are a screening aid for reviewers, not legal advice.
 
-## Next steps (optional Python backend)
+## Backend
 
-To reproduce the notebook results exactly (SDMetrics, scikit-learn) and handle very large files, add a FastAPI service with background jobs, a health endpoint and temporary upload storage. Host it on Render, Railway or Fly.io, and point the frontend at it through an API address variable. The browser engines would remain the fallback.
+The backend lives in `backend/` and is documented in `backend/README.md` (deployment to Modal, API, settings, tests). In short:
+
+1. From `backend/`, run `uvx modal setup`, then `ALLOWED_ORIGINS=https://<your-site>.vercel.app uvx modal deploy modal_app.py`.
+2. Wait for the first build (about 5-10 minutes), then open `https://<workspace>--sda-api-web.modal.run/api/health`.
+3. Put that address in `config.js` as `backendUrl`.
