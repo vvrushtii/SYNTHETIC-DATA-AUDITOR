@@ -819,9 +819,8 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
   </div></sc-for>
  </nav>
  <div class="side-foot">
-  <div class="sf-row"><span class="dot dot-green"></span><span>Engines ready · audits run in this browser</span></div>
-  <div class="sf-row"><svg class="ic"><use href="#i-info"/></svg><span>v1.0.0 · KB-0.1-draft</span></div>
-  <div class="xs">Files you upload stay in this browser, in memory only. The one exception is <b>Full audit (server)</b>, which uploads them to the auditor server and deletes them when the job ends.</div>
+  <div class="sf-row"><span class="dot dot-{{foot.tone}}"></span><span>{{foot.text}}</span></div>
+  <div class="xs">Uploaded files are deleted after each audit. Only results are saved.</div>
  </div>
 </div></aside>
 
@@ -854,14 +853,14 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
 
  <sc-if value="{{ov.noAudits}}"><section class="ov-empty" aria-label="No audit yet">
   <h2 class="ov-h2">No audit yet</h2>
-  <p class="ov-p">Upload a real and a synthetic CSV, or load the clearly labelled demo pair. Fidelity, utility and privacy are then read separately here.</p>
+  <p class="ov-p">Upload your real and synthetic data to start, or try the demo pair.</p>
   <div class="cta-row"><button type="button" class="btn btn-primary" onClick="{{ov.newAudit}}">Upload a pair<span class="btn-cap" aria-hidden="true"><svg class="ic"><use href="#i-arrow"/></svg></span></button><button type="button" class="btn" onClick="{{ov.demo}}"><span class="btn-disc" aria-hidden="true"><svg class="ic"><use href="#i-flask"/></svg></span>Try the demo pair</button></div>
  </section></sc-if>
 
  <sc-if value="{{ov.bn.has}}"><section class="ov-sec" aria-labelledby="ov-bn"><div class="ov-row"><div><h2 class="ov-h2" id="ov-bn">Six-attack benchmark</h2><p class="ov-p" style="margin-top:6px">{{ov.bn.text}}</p></div><button type="button" class="btn btn-sm" onClick="{{ov.bn.go}}"><svg class="ic"><use href="#i-bench"/></svg>Open benchmark</button></div></section></sc-if>
 
  <sc-if value="{{ov.has}}"><section class="ov-sec" aria-labelledby="ov-stand">
-  <div class="ov-row"><div><h2 class="ov-h2" id="ov-stand">Where this audit stands</h2><p class="ov-p" style="margin-top:6px">{{ov.standSub}}</p></div><button type="button" class="btn btn-sm" onClick="{{ov.clearSel}}">Show all pairs</button></div>
+  <div class="ov-row"><div><h2 class="ov-h2" id="ov-stand">Where this audit stands</h2><p class="ov-p" style="margin-top:6px">{{ov.standSub}}</p></div><button type="button" class="btn btn-sm" onClick="{{ov.goPast}}"><svg class="ic"><use href="#i-archive"/></svg>Past audits</button></div>
   <div class="ov-cards">
    <sc-for list="{{ov.stand}}" as="s"><article class="{{s.cls}}">
     <div class="st-k">{{s.label}}</div>
@@ -871,24 +870,13 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
     <button type="button" class="more" onClick="{{s.go}}">{{s.cta}}</button>
    </article></sc-for>
   </div>
-  <p class="ov-p">These three are read separately on purpose. Good fidelity or utility never cancels out a privacy concern.</p>
+  <p class="ov-p">Read each on its own: good quality never cancels a privacy concern.</p>
  </section></sc-if>
 
- <sc-if value="{{ov.hasRecent}}"><section class="ov-sec" aria-labelledby="ov-rec">
-  <div class="ov-row"><div><h2 class="ov-h2" id="ov-rec">{{ov.recTitle}}</h2><p class="ov-p" style="margin-top:6px">{{ov.recSub}}</p><sc-if value="{{ov.pickNote}}"><p class="ov-p">Open a pair to see where it stands. Nothing is pre-selected when you come back.</p></sc-if></div>
-   <div class="segc" role="group" aria-label="Filter audits by status"><sc-for list="{{ov.filters}}" as="t"><button type="button" class="{{t.cls}}" aria-pressed="{{t.on}}" onClick="{{t.go}}">{{t.label}}</button></sc-for></div></div>
-  <div class="ov-table">
-   <div class="tw"><table class="t" style="min-width:680px"><thead><tr><th>Dataset</th><th>Generator</th><th>Status</th><th>Finished</th><th><span class="sr">Open</span></th></tr></thead><tbody>
-    <sc-for list="{{ov.rows}}" as="r"><tr><td><div class="b">{{r.name}}</div><div class="xs mute">{{r.sub}}</div></td><td>{{r.gen}}</td><td><span class="stl"><i class="sq sq-{{r.st.tone}}" aria-hidden="true"></i>{{r.st.label}}</span><div class="xs mute rec-n">{{r.note}}</div></td><td class="mute">{{r.date}}</td><td class="num"><button type="button" class="more" onClick="{{r.open}}">Open</button></td></tr></sc-for>
-   </tbody></table></div>
-   <sc-if value="{{ov.noRows}}"><p class="small mute" style="padding:18px 0;text-align:center">No audits match this filter.</p></sc-if>
-  </div>
-  <sc-if value="{{!ov.clr.ask}}"><button type="button" class="more" onClick="{{ov.clr.start}}">Remove all audits from this browser</button></sc-if>
-  <sc-if value="{{ov.clr.ask}}"><div class="note n-red"><svg class="ic"><use href="#i-alert"/></svg><div class="sp">Remove every stored audit, its review history and export log from this browser? This cannot be undone.<div class="cta-row mt"><button type="button" class="btn btn-danger btn-sm" onClick="{{ov.clr.confirm}}">Remove all</button><button type="button" class="btn btn-sm" onClick="{{ov.clr.cancel}}">Cancel</button></div></div></div></sc-if>
- </section></sc-if>
+ <sc-if value="{{ov.pastLink}}"><section class="ov-sec"><div class="ov-row"><div><h2 class="ov-h2">Past audits</h2><p class="ov-p" style="margin-top:6px">{{ov.pastText}}</p></div><button type="button" class="btn btn-sm" onClick="{{ov.goPast}}"><svg class="ic"><use href="#i-archive"/></svg>Open past audits</button></div></section></sc-if>
 
  <sc-if value="{{ov.has}}"><section class="ov-sec" aria-labelledby="ov-cov">
-  <h2 class="ov-h2" id="ov-cov">Module coverage for this audit</h2>
+  <h2 class="ov-h2" id="ov-cov">What ran for this audit</h2>
   <div class="cv"><sc-for list="{{ov.cover}}" as="c"><div class="cv-i"><span>{{c.name}}</span><span class="stl mute"><i class="sq sq-{{c.bd.tone}}" aria-hidden="true"></i>{{c.text}}</span></div></sc-for></div>
  </section></sc-if>
 
@@ -905,7 +893,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
   <div class="wbody">
 
  <sc-if value="{{na.s1}}"><section class="card">
-  <div class="card-h"><div><h3 class="card-t">Upload the pair</h3><p class="card-s">Need all six privacy attacks? Use <button type="button" class="link-btn" onClick="{{act.goServer}}">Full audit (server)</button>, which uploads the files to the auditor server. Here, files are read and checked in this browser tab and never sent anywhere. Raw rows are cleared when the tab is closed or reloaded; audit results (metrics, not rows) stay in this browser until you remove them.</p></div>
+  <div class="card-h"><div><h3 class="card-t">Upload the pair</h3><p class="card-s">Your real data and the synthetic data made from it. Files are checked here first; for the privacy tests they are sent to the auditor server and deleted afterwards.</p></div>
    <sc-if value="{{na.demoOn}}"><span class="badge b-violet"><svg class="ic"><use href="#i-flask"/></svg>Demo data loaded</span></sc-if></div>
   <div class="g2">
    <sc-for list="{{na.slots}}" as="s"><div class="drop" onDragOver="{{s.over}}" onDrop="{{s.drop}}">
@@ -928,7 +916,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
  </section></sc-if>
 
  <sc-if value="{{na.s2}}"><section class="card">
-  <div class="card-h"><div><h3 class="card-t">Profile both files</h3><p class="card-s">Inspect first, change nothing. Confirm how columns should be read; differences between the files stay visible.</p></div>
+  <div class="card-h"><div><h3 class="card-t">Profile both files</h3><p class="card-s">Check how each column is read.</p></div>
    <button type="button" class="btn btn-sm" onClick="{{na.profile}}" disabled="{{!na.canProfile}}"><svg class="ic"><use href="#i-refresh"/></svg>{{na.profLabel}}</button></div>
   <sc-if value="{{na.profiling}}"><p class="small mute">Profiling…</p></sc-if>
   <sc-if value="{{!na.prof.has}}"><sc-if value="{{!na.profiling}}"><p class="small mute">Add two readable files in Upload, then profile them here.</p></sc-if></sc-if>
@@ -949,7 +937,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
  </section></sc-if>
 
  <sc-if value="{{na.s3}}"><section class="card">
-  <div class="card-h"><div><h3 class="card-t">Choose the data version</h3><p class="card-s">Audit the raw uploads, or the cleaned copies prepared in Data Cleaning. The choice is recorded with every result and in the report.</p></div></div>
+  <div class="card-h"><div><h3 class="card-t">Choose the data version</h3><p class="card-s">Original files or cleaned copies.</p></div></div>
   <div class="vrows"><sc-for list="{{na.prep.versions}}" as="v"><div class="vrow">
    <div class="vrow-h"><div class="sp"><div class="b small">{{v.title}}</div><div class="xs mute">{{v.name}}</div></div><button type="button" class="link-btn" onClick="{{v.open}}">Open Data Cleaning</button></div>
    <div class="vopts">
@@ -973,7 +961,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
   <div class="col" style="gap:0">
    <sc-for list="{{na.attackList}}" as="a"><div class="atk">
     <sc-if value="{{a.implemented}}"><input type="checkbox" id="atk-{{a.id}}" name="{{a.name2}}" checked="{{a.checked}}" onChange="{{act.setField}}"></sc-if>
-    <sc-if value="{{!a.implemented}}"><input type="checkbox" id="atk-{{a.id}}" disabled></sc-if>
+    <sc-if value="{{!a.implemented}}"><input type="checkbox" id="atk-{{a.id}}" disabled checked="{{a.srvOn}}"></sc-if>
     <label for="atk-{{a.id}}" class="sp"><span class="b small">{{a.name}}</span></label>
     <span class="badge b-{{a.status.tone}}"><svg class="ic"><use href="#i-{{a.status.icon}}"/></svg>{{a.status.label}}</span>
    </div></sc-for>
@@ -1039,63 +1027,77 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
  <sc-if value="{{na.hasMissing}}"><details class="help"><summary><svg class="ic"><use href="#i-help"/></svg>{{na.missingLabel}}</summary><div class="help-b"><ul><sc-for list="{{na.missing}}" as="m"><li>{{m}}</li></sc-for></ul></div></details></sc-if>
 </div></sc-if>
 
+<!-- ============================ PAST AUDITS ============================ -->
+<sc-if value="{{pg.history}}"><div class="page">
+ <sc-if value="{{past.none}}"><div class="empty"><div class="empty-ic"><svg class="ic"><use href="#i-archive"/></svg></div><h3>No past audits yet</h3><p>Every audit you run is saved here automatically.</p><div class="cta-row"><button type="button" class="btn btn-primary" onClick="{{past.newAudit}}">Start an audit</button></div></div></sc-if>
+ <sc-if value="{{!past.none}}"><article class="card">
+  <div class="card-h"><div><h3 class="card-t">Your saved audits</h3><p class="card-s">Saved on the auditor server, private to this browser</p></div>
+   <div class="row" style="gap:8px"><input type="search" name="top.pastQ" value="{{past.q}}" onChange="{{act.setField}}" placeholder="Search by name" aria-label="Search past audits" style="min-width:200px"><button type="button" class="btn btn-sm" onClick="{{past.sync}}" disabled="{{!past.online}}"><svg class="ic"><use href="#i-refresh"/></svg>Refresh</button></div></div>
+  <sc-if value="{{past.loading}}"><p class="small mute">Loading saved audits…</p></sc-if>
+  <sc-if value="{{past.hasErr}}"><div class="note n-amber"><svg class="ic"><use href="#i-alert"/></svg><div>Could not load saved audits: {{past.err}}</div></div></sc-if>
+  <div class="tw"><table class="t" style="min-width:820px"><thead><tr><th>Name</th><th>Type</th><th>Date</th><th>Privacy tests</th><th>Privacy risk</th><th>Saved</th><th><span class="sr">Actions</span></th></tr></thead><tbody>
+   <sc-for list="{{past.rows}}" as="r"><tr><td class="b">{{r.name}}</td><td class="small">{{r.type}}</td><td class="small mute">{{r.date}}</td><td class="small">{{r.privacy}}</td><td><span class="badge b-{{r.risk.tone}}"><svg class="ic"><use href="#i-{{r.risk.icon}}"/></svg>{{r.risk.label}}</span></td><td><span class="stl small"><i class="sq sq-{{r.saved.tone}}" aria-hidden="true"></i>{{r.saved.label}}</span></td><td class="num"><div class="row" style="gap:6px;justify-content:flex-end"><button type="button" class="btn btn-sm" onClick="{{r.open}}">Open</button><button type="button" class="icon-btn" onClick="{{r.del}}" title="Delete this audit" aria-label="Delete this audit"><svg class="ic"><use href="#i-trash"/></svg></button></div></td></tr></sc-for>
+  </tbody></table></div>
+  <sc-if value="{{!past.has}}"><p class="small mute" style="padding:14px 0;text-align:center">No audits match this search.</p></sc-if>
+  <sc-if value="{{!past.clr.ask}}"><button type="button" class="more mt" onClick="{{past.clr.start}}">Delete all audits</button></sc-if>
+  <sc-if value="{{past.clr.ask}}"><div class="note n-red mt"><svg class="ic"><use href="#i-alert"/></svg><div class="sp">Delete every saved audit, here and on the server? This cannot be undone.<div class="cta-row mt"><button type="button" class="btn btn-danger btn-sm" onClick="{{past.clr.confirm}}">Delete all</button><button type="button" class="btn btn-sm" onClick="{{past.clr.cancel}}">Cancel</button></div></div></div></sc-if>
+ </article></sc-if>
+ <article class="card"><div class="card-h"><div><h3 class="card-t">Open on another device</h3><p class="card-s">Your audits are tied to a private access key</p></div></div>
+  <div class="row" style="gap:8px;flex-wrap:wrap"><span class="small">This browser’s key: <span class="mono">{{past.keyMask}}</span></span><button type="button" class="btn btn-sm" onClick="{{past.copyKey}}"><svg class="ic"><use href="#i-copy"/></svg>Copy key</button></div>
+  <div class="row mt" style="gap:8px;flex-wrap:wrap"><input type="text" name="top.keyDraft" value="{{past.keyDraft}}" onChange="{{act.setField}}" placeholder="Paste a key from another device" aria-label="Access key from another device" autocomplete="off" spellcheck="false" style="flex:1;min-width:240px"><button type="button" class="btn btn-sm" onClick="{{past.useKey}}" disabled="{{!past.online}}">Use this key</button></div>
+  <p class="xs mute mt">Keep the key private: anyone who has it can see these audits. Saved audits hold results only, never your data rows.</p></article>
+</div></sc-if>
+
 <!-- ============================ DATA CLEANING ============================ -->
 <sc-if value="{{pg.server}}"><div class="page">
- <div class="note n-amber"><svg class="ic"><use href="#i-alert"/></svg><div class="sp"><b>Your files leave this browser.</b> In this mode the CSV files are uploaded to the auditor server, processed by the Python pipeline and deleted as soon as the job ends. Only the metrics come back. If the data must not leave this computer, use <button type="button" class="link-btn" onClick="{{act.newAudit}}">New Audit</button> instead, which runs in the browser (two of the six attacks).</div></div>
+ <div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div class="sp">Upload real data. The server creates synthetic data from 80% of it, then runs every quality and privacy test. Your file is deleted when the job ends.</div></div>
+ <sc-if value="{{sv.showOffline}}"><div class="note n-amber"><svg class="ic"><use href="#i-alert"/></svg><div class="sp">The auditor server is not answering. {{sv.err}}</div><button type="button" class="btn btn-sm" onClick="{{sv.check}}" disabled="{{sv.checking}}"><svg class="ic"><use href="#i-refresh"/></svg>Try again</button></div></sc-if>
 
- <article class="card">
-  <div class="card-h"><div><h3 class="card-t">Auditor server</h3><p class="card-s">The address of the backend that runs the Python pipeline (for example <span class="mono">https://name--sda-api-web.modal.run</span>). It is remembered in this browser.</p></div><span class="badge b-{{sv.status.tone}}"><svg class="ic"><use href="#i-{{sv.status.icon}}"/></svg>{{sv.status.label}}</span></div>
+ <sc-if value="{{sv.showUrl}}"><article class="card">
+  <div class="card-h"><div><h3 class="card-t">Auditor server</h3><p class="card-s">Address of the backend API</p></div><span class="badge b-{{sv.status.tone}}"><svg class="ic"><use href="#i-{{sv.status.icon}}"/></svg>{{sv.status.label}}</span></div>
   <div class="row" style="gap:8px;align-items:flex-end;flex-wrap:wrap">
    <div class="field" style="flex:1;min-width:240px"><label for="sv-url">Server address</label><input id="sv-url" type="text" inputmode="url" name="sv.urlDraft" value="{{sv.urlField}}" onChange="{{act.setField}}" placeholder="https://your-name--sda-api-web.modal.run" autocomplete="off" spellcheck="false"></div>
    <button type="button" class="btn" onClick="{{sv.saveUrl}}"><svg class="ic"><use href="#i-check"/></svg>Save and check</button>
   </div>
-  <sc-if value="{{sv.checking}}"><p class="small mute mt">Contacting the server… A server that has been idle can take about a minute to wake up.</p></sc-if>
+  <sc-if value="{{sv.checking}}"><p class="small mute mt">Contacting the server… An idle server can take about a minute to wake up.</p></sc-if>
   <sc-if value="{{sv.hasErr}}"><div class="note n-red mt"><svg class="ic"><use href="#i-x"/></svg><div>{{sv.err}}</div></div></sc-if>
-  <sc-if value="{{sv.online}}"><dl class="kv mt"><sc-for list="{{sv.limits}}" as="l"><dt>{{l.k}}</dt><dd>{{l.v}}</dd></sc-for><dt>Data handling</dt><dd>{{sv.policy}}</dd><dt>Queue</dt><dd>{{sv.queue}}</dd><dt>Libraries</dt><dd class="small">{{sv.versions}}</dd></dl></sc-if>
- </article>
+  <sc-if value="{{sv.online}}"><dl class="kv mt"><sc-for list="{{sv.limits}}" as="l"><dt>{{l.k}}</dt><dd>{{l.v}}</dd></sc-for><dt>Queue</dt><dd>{{sv.queue}}</dd><dt>Libraries</dt><dd class="small">{{sv.versions}}</dd></dl></sc-if>
+ </article></sc-if>
 
  <sc-if value="{{sv.job.has}}"><article class="card">
-  <div class="card-h"><div><h3 class="card-t">Audit job<sc-if value="{{sv.job.name}}"> · {{sv.job.name}}</sc-if></h3><p class="card-s">{{sv.job.label}}<sc-if value="{{sv.job.count}}"> · {{sv.job.count}}</sc-if></p></div><span class="badge b-{{sv.job.bd.tone}}"><svg class="ic"><use href="#i-{{sv.job.bd.icon}}"/></svg>{{sv.job.bd.label}}</span></div>
+  <div class="card-h"><div><h3 class="card-t">Progress<sc-if value="{{sv.job.name}}"> · {{sv.job.name}}</sc-if></h3><p class="card-s">{{sv.job.label}}<sc-if value="{{sv.job.count}}"> · {{sv.job.count}}</sc-if></p></div><span class="badge b-{{sv.job.bd.tone}}"><svg class="ic"><use href="#i-{{sv.job.bd.icon}}"/></svg>{{sv.job.bd.label}}</span></div>
   <sc-if value="{{sv.job.hasSteps}}"><div class="tw"><table class="t"><thead><tr><th>Step</th><th>Status</th><th class="num">Time</th></tr></thead><tbody><sc-for list="{{sv.job.steps}}" as="s"><tr><td>{{s.label}}</td><td><span class="badge b-{{s.bd.tone}}"><svg class="ic"><use href="#i-{{s.bd.icon}}"/></svg>{{s.bd.label}}</span></td><td class="num mono">{{s.secs}}</td></tr></sc-for></tbody></table></div></sc-if>
-  <sc-if value="{{sv.job.running}}"><p class="small mute mt">Small tables take about a minute; large ones (tens of thousands of rows) can take 10–20 minutes. You can leave this page open in the background.</p></sc-if>
+  <sc-if value="{{sv.job.running}}"><p class="small mute mt">Small files take a few minutes; large ones up to 20. Keep this page open.</p></sc-if>
   <sc-if value="{{sv.job.hasError}}"><div class="note n-red mt"><svg class="ic"><use href="#i-x"/></svg><div>{{sv.job.error}}</div></div></sc-if>
-  <sc-if value="{{sv.job.done}}"><div class="note n-green mt"><svg class="ic"><use href="#i-check"/></svg><div>The result has been added to the <b>Benchmark</b> page in this browser, next to the 41 study datasets.<sc-if value="{{sv.job.deleted}}"> The server has deleted the uploaded files.</sc-if></div></div></sc-if>
+  <sc-if value="{{sv.job.done}}"><div class="note n-green mt"><svg class="ic"><use href="#i-check"/></svg><div>Done. The result is saved in Past audits.<sc-if value="{{sv.job.deleted}}"> Your uploaded file has been deleted.</sc-if></div></div></sc-if>
   <div class="cta-row mt">
-   <sc-if value="{{sv.job.done}}"><button type="button" class="btn btn-primary" onClick="{{sv.job.open}}"><svg class="ic"><use href="#i-bench"/></svg>Open the result</button><button type="button" class="btn" onClick="{{sv.job.download}}"><svg class="ic"><use href="#i-download"/></svg>Download result (.json)</button></sc-if>
-   <sc-if value="{{sv.job.canCancel}}"><button type="button" class="btn btn-danger" onClick="{{sv.job.cancel}}"><svg class="ic"><use href="#i-x"/></svg>Cancel job</button></sc-if>
+   <sc-if value="{{sv.job.done}}"><button type="button" class="btn btn-primary" onClick="{{sv.job.open}}"><svg class="ic"><use href="#i-arrow"/></svg>Open the result</button><button type="button" class="btn" onClick="{{sv.job.download}}"><svg class="ic"><use href="#i-download"/></svg>Download (.json)</button></sc-if>
+   <sc-if value="{{sv.job.canCancel}}"><button type="button" class="btn btn-danger" onClick="{{sv.job.cancel}}"><svg class="ic"><use href="#i-x"/></svg>Cancel</button></sc-if>
    <sc-if value="{{sv.job.ended}}"><button type="button" class="btn" onClick="{{sv.job.again}}"><svg class="ic"><use href="#i-plus"/></svg>Start another</button></sc-if>
   </div>
  </article></sc-if>
 
  <article class="card">
-  <div class="card-h"><div><h3 class="card-t">What should the server do?</h3><p class="card-s">Both options run cleaning, fidelity, utility and all six privacy attacks with the same code as the 41-dataset study.</p></div></div>
-  <div class="seg"><sc-for list="{{sv.modes}}" as="m"><button type="button" class="{{m.cls}}" onClick="{{m.pick}}" disabled="{{sv.locked}}"><span class="b">{{m.label}}</span><span class="xs mute">{{m.desc}}</span></button></sc-for></div>
- </article>
-
- <article class="card">
-  <div class="card-h"><div><h3 class="card-t">Files</h3><p class="card-s">Comma-separated CSV files with a header row. Columns are matched by name.</p></div></div>
+  <div class="card-h"><div><h3 class="card-t">1. Upload real data</h3><p class="card-s">A CSV file with a header row</p></div></div>
   <div class="g2">
    <sc-for list="{{sv.slots}}" as="s"><div class="drop">
     <div class="drop-h"><strong>{{s.title}}</strong><sc-if value="{{s.has}}"><span class="badge b-green"><svg class="ic"><use href="#i-check"/></svg>Ready</span></sc-if><sc-if value="{{!s.has}}"><sc-if value="{{s.need}}"><span class="badge b-grey"><svg class="ic"><use href="#i-clock"/></svg>Needed</span></sc-if></sc-if></div>
-    <p class="xs mute">{{s.sub}}</p>
     <sc-if value="{{s.has}}"><dl class="fgrid"><dt>File</dt><dd>{{s.name}}</dd><dt>Size</dt><dd>{{s.size}}</dd><dt>Shape</dt><dd>{{s.rows}}</dd></dl></sc-if>
     <sc-if value="{{s.hasWarn}}"><div class="note n-amber"><svg class="ic"><use href="#i-alert"/></svg><div>{{s.warn}}</div></div></sc-if>
     <div class="row"><label class="btn btn-sm" for="{{s.inputId}}"><svg class="ic"><use href="#i-upload"/></svg>{{s.label}}</label><input class="sr" id="{{s.inputId}}" type="file" accept=".csv,text/csv" onChange="{{s.pick}}" disabled="{{s.disabled}}"><sc-if value="{{s.has}}"><button type="button" class="btn btn-sm btn-danger" onClick="{{s.remove}}" disabled="{{s.disabled}}"><svg class="ic"><use href="#i-trash"/></svg>Remove</button></sc-if></div>
    </div></sc-for>
   </div>
-  <sc-if value="{{sv.noHold}}"><div class="note n-amber mt"><svg class="ic"><use href="#i-alert"/></svg><div>Without holdout rows (a holdout file or a membership column) only fidelity can be measured. The utility test and the six privacy attacks will be reported as <b>not run</b>, which is not evidence of low risk.</div></div></sc-if>
  </article>
 
  <article class="card">
-  <div class="card-h"><div><h3 class="card-t">Settings</h3><p class="card-s">The target is the column a model would predict; it is also the default secret for the attribute-inference attack.</p></div></div>
+  <div class="card-h"><div><h3 class="card-t">2. Choose settings</h3><p class="card-s">What to predict, and how to generate</p></div></div>
   <div class="g2">
-   <div class="field"><label for="sv-target">Target column</label><select id="sv-target" name="sv.target" value="{{sv.target}}" onChange="{{act.setField}}" disabled="{{sv.locked}}"><sc-for list="{{sv.targets}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+   <div class="field"><label for="sv-target">Target column <span class="hint">(what a model should predict)</span></label><select id="sv-target" name="sv.target" value="{{sv.target}}" onChange="{{act.setField}}" disabled="{{sv.locked}}"><sc-for list="{{sv.targets}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
    <div class="field"><label for="sv-task">Task <sc-if value="{{sv.taskHint}}"><span class="hint">({{sv.taskHint}})</span></sc-if></label><select id="sv-task" name="sv.task" value="{{sv.task}}" onChange="{{act.setField}}" disabled="{{sv.locked}}"><option value="">Choose…</option><option value="classification">Classification</option><option value="regression">Regression</option></select></div>
-   <sc-if value="{{sv.gen}}"><div class="field"><label for="sv-gen">Generator</label><select id="sv-gen" name="sv.generator" value="{{sv.generator}}" onChange="{{act.setField}}" disabled="{{sv.locked}}"><sc-for list="{{sv.gens}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div></sc-if>
-   <sc-if value="{{sv.audit}}"><div class="field"><label for="sv-mem">Membership column <span class="hint">(optional: 1 = training row, 0 = holdout row)</span></label><select id="sv-mem" name="sv.memCol" value="{{sv.memCol}}" onChange="{{act.setField}}" disabled="{{sv.locked}}"><sc-for list="{{sv.memOpts}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div></sc-if>
-   <div class="field"><label for="sv-name">Dataset name <span class="hint">(shown on the Benchmark page)</span></label><input id="sv-name" type="text" name="sv.name" value="{{sv.name}}" onChange="{{act.setField}}" placeholder="e.g. Hospital admissions 2024" disabled="{{sv.locked}}"></div>
+   <div class="field"><label for="sv-gen">Generator</label><select id="sv-gen" name="sv.generator" value="{{sv.generator}}" onChange="{{act.setField}}" disabled="{{sv.locked}}"><sc-for list="{{sv.gens}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+   <div class="field"><label for="sv-name">Name <span class="hint">(shown in Past audits)</span></label><input id="sv-name" type="text" name="sv.name" value="{{sv.name}}" onChange="{{act.setField}}" placeholder="e.g. Hospital admissions 2024" disabled="{{sv.locked}}"></div>
   </div>
-  <sc-if value="{{sv.hasSens}}"><div class="field mt"><label>Sensitive columns for attribute inference <span class="hint">(optional; the target is used if none are chosen)</span></label><div class="chips"><sc-for list="{{sv.sensOpts}}" as="c"><button type="button" class="{{c.cls}}" aria-pressed="{{c.on}}" onClick="{{c.toggle}}" disabled="{{sv.locked}}">{{c.label}}</button></sc-for></div></div></sc-if>
+  <sc-if value="{{sv.hasSens}}"><details class="help mt"><summary><svg class="ic"><use href="#i-sliders"/></svg>Sensitive columns (optional)</summary><div class="help-b"><p class="xs mute">The attribute-inference test tries to guess these. The target is used if none are chosen.</p><div class="chips"><sc-for list="{{sv.sensOpts}}" as="c"><button type="button" class="{{c.cls}}" aria-pressed="{{c.on}}" onClick="{{c.toggle}}" disabled="{{sv.locked}}">{{c.label}}</button></sc-for></div></div></details></sc-if>
   <sc-if value="{{sv.hasProblems}}"><div class="col mt" style="gap:6px"><sc-for list="{{sv.problems}}" as="p"><div class="note n-grey"><svg class="ic"><use href="#i-info"/></svg><div>{{p}}</div></div></sc-for></div></sc-if>
   <div class="cta-row mt"><button type="button" class="btn btn-primary" onClick="{{sv.submit}}" disabled="{{!sv.canSubmit}}"><svg class="ic"><use href="#i-play"/></svg>{{sv.submitLabel}}</button></div>
  </article>
@@ -1251,7 +1253,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
  <sc-if value="{{fi.has}}">
   <div class="strip strip-4"><sc-for list="{{fi.kpis}}" as="k"><article class="kpi"><div class="kpi-h"><span class="kpi-l">{{k.label}}</span><span class="badge b-{{k.bd.tone}}"><svg class="ic"><use href="#i-{{k.bd.icon}}"/></svg>{{k.bd.label}}</span></div><div class="kpi-v">{{k.value}}</div><p class="kpi-s">{{k.extra}}</p>
    <details><summary class="link-btn" style="list-style:none;margin-top:6px">About this metric</summary><div class="small" style="margin-top:6px"><p><b>Definition.</b> {{k.def}}</p><p class="mt"><b>Direction.</b> {{k.dir}}</p><p class="mt"><b>Limitation.</b> {{k.lim}}</p></div></details></article></sc-for></div>
-  <div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div>High fidelity does not guarantee privacy, complete realism or downstream utility. Bands (Close ≥ 0.90, Moderate gap ≥ 0.80, Large gap below) are reading aids, not pass / fail thresholds. {{fi.sampleText}}</div></div>
+  <div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div>Close ≥ 0.90 · moderate gap ≥ 0.80 · large gap below. High similarity says nothing about privacy. {{fi.sampleText}}</div></div>
   <div class="tabs" role="tablist"><sc-for list="{{fi.tabs}}" as="t"><button type="button" role="tab" class="{{t.cls}}" onClick="{{t.go}}">{{t.label}}</button></sc-for></div>
 
   <sc-if value="{{fi.tDist}}">
@@ -1365,15 +1367,18 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
 
 <!-- ============================ PRIVACY ============================ -->
 <sc-if value="{{pg.privacy}}"><div class="page">
- <sc-if value="{{!pr.has}}"><div class="empty"><div class="empty-ic"><svg class="ic"><use href="#i-lock"/></svg></div><h3>No privacy tests have run</h3><p>{{empty.text}} Attack records appear here as separate cards once the privacy module has run.</p><div class="cta-row"><button type="button" class="btn btn-primary" onClick="{{empty.newAudit}}">Start New Audit</button><button type="button" class="btn" onClick="{{empty.demo}}">Load demo pair</button><button type="button" class="btn" onClick="{{empty.goBench}}"><svg class="ic"><use href="#i-bench"/></svg>Six-attack benchmark</button></div></div></sc-if>
+ <sc-if value="{{!pr.has}}"><div class="empty"><div class="empty-ic"><svg class="ic"><use href="#i-lock"/></svg></div><h3>No privacy tests have run</h3><p>{{empty.text}}</p><div class="cta-row"><button type="button" class="btn btn-primary" onClick="{{empty.newAudit}}">Start New Audit</button><button type="button" class="btn" onClick="{{empty.demo}}">Load demo pair</button></div></div></sc-if>
  <sc-if value="{{pr.has}}">
-  <div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div class="sp"><b>{{pr.summary}}.</b> This browser runs 2 of the 6 attack types. The other four need Python libraries, so they run on the auditor server (<button type="button" class="link-btn" onClick="{{act.goServer}}">Full audit (server)</button>); here they are shown as not applicable, never as completed. <button type="button" class="more" onClick="{{pr.goBench}}">See all six on 41 public datasets</button></div><span class="badge b-{{pr.kind.tone}}"><svg class="ic"><use href="#i-{{pr.kind.icon}}"/></svg>{{pr.kind.label}}</span></div>
+  <div class="row" style="justify-content:space-between"><p class="small mute" style="margin:0"><b>{{pr.summary}}</b></p><span class="badge b-{{pr.kind.tone}}"><svg class="ic"><use href="#i-{{pr.kind.icon}}"/></svg>{{pr.kind.label}}</span></div>
+  <sc-if value="{{pr.srv.show}}"><div class="note n-{{pr.srv.tone}}"><svg class="ic"><use href="#i-{{pr.srv.icon}}"/></svg><div class="sp">{{pr.srv.text}}</div><sc-if value="{{pr.srv.canRetry}}"><button type="button" class="btn btn-sm" onClick="{{pr.srv.retry}}"><svg class="ic"><use href="#i-play"/></svg>Run server tests</button></sc-if></div></sc-if>
   <sc-for list="{{pr.cards}}" as="c"><article class="{{c.cls}}">
    <div class="card-h"><div><h3 class="card-t">{{c.name}}</h3><p class="card-s" style="max-width:760px">{{c.desc}}</p></div><span class="badge b-{{c.bd.tone}}"><svg class="ic"><use href="#i-{{c.bd.icon}}"/></svg>{{c.bd.label}}</span></div>
    <sc-if value="{{c.hasMsg}}"><div class="note n-grey"><svg class="ic"><use href="#i-dash"/></svg><div>{{c.msg}}</div></div></sc-if>
    <sc-if value="{{c.done}}">
     <div class="g4" style="margin-bottom:12px"><sc-for list="{{c.metrics}}" as="m"><div class="bigstat"><span class="small mute">{{m.k}}</span><span class="bigv">{{m.v}}</span><span class="xs mute">{{m.sub}}</span></div></sc-for></div>
     <div class="note n-grey" style="margin-bottom:12px"><svg class="ic"><use href="#i-lock"/></svg><div><b>Interpretation.</b> {{c.interp}}</div></div>
+    <sc-if value="{{c.hasRates}}"><dl class="kv" style="margin-bottom:12px"><sc-for list="{{c.rates}}" as="r"><dt>{{r.k}}</dt><dd>{{r.v}}</dd></sc-for></dl></sc-if>
+    <sc-if value="{{c.isInfer}}"><div class="tw" style="margin-bottom:12px"><table class="t"><thead><tr><th>Secret column</th><th class="num">Risk</th><th class="num">95% interval</th><th class="num">Success · training</th><th class="num">Success · holdout</th></tr></thead><tbody><sc-for list="{{c.secrets}}" as="x"><tr><td class="b">{{x.col}}</td><td class="num mono">{{x.risk}}</td><td class="num mono">{{x.ci}}</td><td class="num mono">{{x.atk}}</td><td class="num mono">{{x.ctl}}</td></tr></sc-for></tbody></table></div></sc-if>
     <sc-if value="{{c.isMia}}"><div class="g2" style="margin-bottom:12px">
      <div><div class="card-h" style="margin-bottom:6px"><div class="sec-t" style="margin:0">ROC curve</div><button type="button" class="btn btn-sm" onClick="{{c.dlRoc}}"><svg class="ic"><use href="#i-download"/></svg>SVG</button></div>
       <svg class="roc" viewBox="0 0 100 100" role="img" aria-label="ROC curve of the membership inference attack"><line class="roc-diag" x1="0" y1="100" x2="100" y2="0"/><line class="roc-fpr" x1="10" y1="0" x2="10" y2="100"/><polyline class="roc-line" points="{{c.rocPts}}"/></svg>
@@ -1390,12 +1395,12 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
    </sc-if>
   </article></sc-for>
 
-  <sc-if value="{{pr.hasComps}}"><article class="card"><div class="card-h"><div><h3 class="card-t">Comparison across completed attacks</h3><p class="card-s">Normalised signal strength: 0 = chance level, 1 = strong signal (display only; raw values shown). Colour = level under the documented thresholds.</p></div><button type="button" class="btn btn-sm" onClick="{{pr.dlComp}}"><svg class="ic"><use href="#i-download"/></svg>Plot</button></div>
+  <sc-if value="{{pr.hasComps}}"><article class="card"><div class="card-h"><div><h3 class="card-t">Comparison across completed attacks</h3><p class="card-s">0 = chance level, 1 = strong signal</p></div><button type="button" class="btn btn-sm" onClick="{{pr.dlComp}}"><svg class="ic"><use href="#i-download"/></svg>Plot</button></div>
    <sc-for list="{{pr.comps}}" as="c"><div class="brow" style="grid-template-columns:minmax(120px,210px) 1fr 140px"><div class="bn">{{c.label}}</div><div class="track"><div class="fill {{c.cls}}" style="width: {{c.w}}%"></div></div><div class="row" style="gap:6px;justify-content:flex-end"><span class="bv">{{c.text}}</span><span class="badge b-{{c.level.tone}}">{{c.level.label}}</span></div></div></sc-for></article></sc-if>
 
-  <article class="card"><div class="card-h"><div><h3 class="card-t">Detailed results</h3><p class="card-s">One row per attack, including attacks that did not complete</p></div><button type="button" class="btn btn-sm" onClick="{{pr.dl}}"><svg class="ic"><use href="#i-download"/></svg>CSV</button></div>
-   <div class="tw"><table class="t" style="min-width:1180px"><thead><tr><th>Attack</th><th>Status</th><th class="num">ROC-AUC</th><th class="num">TPR @ 10% FPR</th><th class="num">Exact-match excess</th><th>Sample (members/non or synth/base)</th><th>Seed</th><th>Notes</th></tr></thead><tbody>
-    <sc-for list="{{pr.table}}" as="r"><tr><td class="b">{{r.name}}</td><td><span class="badge b-{{r.bd.tone}}"><svg class="ic"><use href="#i-{{r.bd.icon}}"/></svg>{{r.bd.label}}</span></td><td class="num mono">{{r.auc}}</td><td class="num mono">{{r.tpr}}</td><td class="num mono">{{r.excess}}</td><td class="small">{{r.sample}}</td><td class="mono">{{r.seed}}</td><td class="small" style="min-width:280px">{{r.note}}</td></tr></sc-for>
+  <article class="card"><div class="card-h"><div><h3 class="card-t">All six tests at a glance</h3><p class="card-s">One row per test</p></div><button type="button" class="btn btn-sm" onClick="{{pr.dl}}"><svg class="ic"><use href="#i-download"/></svg>CSV</button></div>
+   <div class="tw"><table class="t" style="min-width:860px"><thead><tr><th>Test</th><th>Runs in</th><th>Result</th><th class="num">Value</th><th class="num">95% interval</th><th>Measure</th><th>Notes</th></tr></thead><tbody>
+    <sc-for list="{{pr.table}}" as="r"><tr><td class="b">{{r.name}}</td><td class="small">{{r.where}}</td><td><span class="badge b-{{r.bd.tone}}"><svg class="ic"><use href="#i-{{r.bd.icon}}"/></svg>{{r.bd.label}}</span></td><td class="num mono">{{r.main}}</td><td class="num mono">{{r.ci}}</td><td class="small">{{r.what}}</td><td class="small" style="min-width:220px">{{r.note}}</td></tr></sc-for>
    </tbody></table></div></article>
 
   <details class="help"><summary><svg class="ic"><use href="#i-info"/></svg>How to Interpret These Results</summary><div class="help-b">
@@ -1403,7 +1408,8 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
    <li><b>TPR @ 10% FPR</b>: the share of members flagged when 10% of non-members are wrongly flagged. Chance level is 0.10. Higher means a stronger attack signal at that operating point; it is not a breach probability.</li>
    <li><b>Membership evidence</b>: a “proxy” setup uses labels the generator never saw, so it cannot show that real members are safe. Prefer a membership column or an attested ordered split.</li>
    <li><b>Exact-match excess</b>: copies above what real data collides with naturally. Near-copies are not covered.</li>
-   <li><b>Not applicable / Not Run / Failed</b> are different states: not applicable = not available in this version; Not Run = not selected; Failed = it ran and errored. None is ever counted as a pass.</li></ul></div></details>
+   <li><b>Risk</b> (singling-out, linkability, attribute inference): how much better the attack does on training rows than on rows the generator never saw. 0 = no measurable leak; the 95% interval shows the uncertainty.</li>
+   <li><b>Pending / Not Run / Failed</b> are never counted as a pass.</li></ul></div></details>
  </sc-if>
 </div></sc-if>
 
@@ -1413,12 +1419,11 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
  <sc-if value="{{en.has}}">
   <article class="card verdict vt-{{en.tone}}"><div class="risk">
    <div class="risk-ic b-{{en.tone}}"><svg class="ic"><use href="#i-{{en.icon}}"/></svg></div>
-   <div class="sp" style="min-width:260px"><div class="sec-t" style="margin:0">Empirical privacy-risk interpretation</div><div class="risk-t">{{en.label}}</div>
-    <div class="small mute">Rules {{en.rulesVersion}} · based on {{en.coverage.text}} · not a formal privacy guarantee and not a legal verdict</div></div>
+   <div class="sp" style="min-width:260px"><div class="sec-t" style="margin:0">Overall privacy risk</div><div class="risk-t">{{en.label}}</div>
+    <div class="small mute">Based on {{en.coverage.text}} · not a legal verdict</div></div>
    <span class="badge b-{{en.kind.tone}}"><svg class="ic"><use href="#i-{{en.kind.icon}}"/></svg>{{en.kind.label}}</span></div>
    <hr class="hr"><ul class="small" style="margin:6px 0 0;padding-left:18px"><sc-for list="{{en.rationale}}" as="r"><li>{{r}}</li></sc-for></ul>
    <sc-if value="{{en.hasDrivers}}"><p class="small mt"><b>Driving signal(s):</b> {{en.drivers}}</p></sc-if></article>
-  <div class="note n-violet"><svg class="ic"><use href="#i-scale"/></svg><div>Technical privacy risk is kept separate from legal compliance status (see Governance &amp; Compliance). High fidelity or utility never cancels a concerning privacy signal<sc-if value="{{en.fid}}"> — fidelity here is {{en.fid}}, and it plays no part in this category</sc-if>.</div></div>
   <div class="g2">
    <article class="card"><div class="card-h"><div><h3 class="card-t">Attack coverage</h3><p class="card-s">{{en.coverage.text}}</p></div></div>
     <div class="segbar" role="img" aria-label="{{en.coverage.text}}"><sc-for list="{{en.coverage.segs}}" as="s"><sc-if value="{{s.show}}"><div class="{{s.cls}}" style="width: {{s.w}}%" title="{{s.label}}: {{s.count}}"></div></sc-if></sc-for></div>
@@ -1430,7 +1435,9 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
   <article class="card"><div class="card-h"><div><h3 class="card-t">Component evidence</h3><p class="card-s">Raw values are always preserved next to the normalised score</p></div><button type="button" class="btn btn-sm" onClick="{{en.dl}}"><svg class="ic"><use href="#i-download"/></svg>CSV</button></div>
    <sc-if value="{{en.hasComps}}"><div class="tw"><table class="t"><thead><tr><th>Signal</th><th class="num">Raw value</th><th>Level</th><th class="num">Normalised</th><th>Membership evidence</th><th>Thresholds</th></tr></thead><tbody>
     <sc-for list="{{en.comps}}" as="c"><tr><td class="b">{{c.label}}<div class="xs mute">{{c.ci}}</div></td><td class="num mono">{{c.raw}}</td><td><span class="badge b-{{c.lvl.tone}}"><svg class="ic"><use href="#i-{{c.lvl.icon}}"/></svg>{{c.lvl.label}}</span></td><td class="num mono">{{c.score}}</td><td class="small">{{c.validity}}</td><td class="small">{{c.thr}}</td></tr></sc-for></tbody></table></div></sc-if>
-   <sc-if value="{{!en.hasComps}}"><p class="small mute">No components — nothing to tabulate.</p></sc-if></article>
+   <sc-if value="{{!en.hasComps}}"><p class="small mute">No components — nothing to tabulate.</p></sc-if>
+   <sc-if value="{{en.hasSrv}}"><div class="sec-t mt">Server tests</div><div class="tw"><table class="t"><thead><tr><th>Test</th><th class="num">Value</th><th class="num">95% interval</th><th class="num">Chance</th><th>Result</th></tr></thead><tbody>
+    <sc-for list="{{en.srvRows}}" as="c"><tr><td class="b">{{c.label}}</td><td class="num mono">{{c.raw}}</td><td class="num mono">{{c.ci}}</td><td class="num mono">{{c.chance}}</td><td><span class="badge b-{{c.bd.tone}}"><svg class="ic"><use href="#i-{{c.bd.icon}}"/></svg>{{c.bd.label}}</span></td></tr></sc-for></tbody></table></div></sc-if></article>
   <div class="g2">
    <article class="card"><h3 class="card-t">Conflicting signals and uncertainty</h3>
     <sc-if value="{{en.hasConflicts}}"><div class="col mt"><sc-for list="{{en.conflicts}}" as="c"><div class="note n-amber"><svg class="ic"><use href="#i-alert"/></svg><div>{{c}}</div></div></sc-for></div></sc-if>
@@ -1449,34 +1456,29 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
 
 <!-- ============================ GOVERNANCE ============================ -->
 <sc-if value="{{pg.governance}}"><div class="page">
- <div class="note n-violet"><svg class="ic"><use href="#i-scale"/></svg><div>{{gv.disclaimer}} Knowledge base {{gv.kbVersion}}: every rule is an unverified draft until a reviewer marks it project-reviewed.</div></div>
+ <div class="note n-violet"><svg class="ic"><use href="#i-scale"/></svg><div>Guidance only, not legal advice. Each law’s status was last checked in Nov 2026; follow the official source link for the full text.</div></div>
  <div class="tabs" role="tablist"><sc-for list="{{gv.tabs}}" as="t"><button type="button" role="tab" class="{{t.cls}}" onClick="{{t.go}}">{{t.label}}<span class="tab-n">{{t.count}}</span></button></sc-for></div>
 
  <sc-if value="{{gv.tFw}}">
-  <article class="card"><div class="card-h"><div><h3 class="card-t">Framework catalogue</h3><p class="card-s">{{gv.fwCounts.binding}} binding laws · {{gv.fwCounts.vol}} voluntary frameworks · {{gv.fwCounts.std}} technical standards · only {{gv.fwCounts.withRules}} have any rule records. Listing a framework is not the same as implementing it.</p></div>
+  <article class="card"><div class="card-h"><div><h3 class="card-t">Privacy laws and standards</h3><p class="card-s">{{gv.fwCounts.binding}} laws · {{gv.fwCounts.vol}} voluntary frameworks · {{gv.fwCounts.std}} standards</p></div>
     <div class="chips"><sc-for list="{{gv.fwFilters}}" as="f"><button type="button" class="{{f.cls}}" onClick="{{f.go}}">{{f.label}}</button></sc-for></div></div>
    <div class="g3"><sc-for list="{{gv.fwCards}}" as="f"><div class="card fw">
-    <div class="fw-h"><div class="sp"><div class="fw-n">{{f.name}}</div><div class="xs mute">{{f.jurisdiction}}</div></div><span class="badge b-{{f.status.tone}}"><svg class="ic"><use href="#i-{{f.status.icon}}"/></svg>{{f.status.label}}</span></div>
+    <div class="fw-h"><div class="sp"><div class="fw-n">{{f.name}}</div><div class="xs mute">{{f.jurisdiction}}</div></div><span class="badge b-{{f.state.tone}}"><svg class="ic"><use href="#i-{{f.state.icon}}"/></svg>{{f.state.label}}</span></div>
     <p class="small mute">{{f.long}}</p>
-    <div class="row" style="gap:8px"><span class="badge b-{{f.inst.tone}}"><svg class="ic"><use href="#i-{{f.inst.icon}}"/></svg>{{f.inst.label}}</span><span class="xs mute">{{f.rules}} rules drafted · {{f.reviewed}} reviewed</span></div>
-    <sc-if value="{{f.hasNote}}"><p class="xs" style="color:var(--amber)">{{f.note}}</p></sc-if>
-    <details class="fw-d"><summary>Version &amp; source details</summary><dl class="kv fw-kv"><dt>Version</dt><dd>{{f.version}}</dd><dt>Status</dt><dd>{{f.effective}}</dd><dt>Source check</dt><dd>{{f.freshness}}</dd></dl></details>
-    <a class="small fw-a" href="{{f.url}}" target="_blank" rel="noopener noreferrer">Official source — {{f.body}} ↗</a>
+    <dl class="kv fw-kv"><dt>Status</dt><dd>{{f.since}}</dd><dt>Latest</dt><dd>{{f.latest}}</dd><dt>For synthetic data</dt><dd>{{f.means}}</dd></dl>
+    <div class="row" style="gap:8px;justify-content:space-between"><a class="small fw-a" href="{{f.url}}" target="_blank" rel="noopener noreferrer">Official source — {{f.body}} ↗</a><span class="xs mute">Checked {{f.checked}}</span></div>
    </div></sc-for></div>
-   <div class="sec-t mt">Status key</div><div class="g3"><sc-for list="{{gv.fwLegend}}" as="l"><div class="row" style="align-items:flex-start;flex-wrap:nowrap"><span class="badge b-{{l.bd.tone}}"><svg class="ic"><use href="#i-{{l.bd.icon}}"/></svg>{{l.bd.label}}</span><span class="small mute">{{l.text}}</span></div></sc-for></div>
   </article>
  </sc-if>
 
  <sc-if value="{{gv.tKb}}">
-  <article class="card"><div class="card-h"><div><h3 class="card-t">Compliance Knowledge Base</h3><p class="card-s">The controlled library of source material the Compliance Mapper is allowed to use · {{gv.kbStats.total}} rule records · {{gv.kbTotals}} project-reviewed</p></div></div>
-   <div class="g4"><sc-for list="{{gv.kbSplit}}" as="s"><div><div class="b">{{s.t}}</div><p class="small mute">{{s.d}}</p></div></sc-for></div>
-   <div class="note n-amber mt"><svg class="ic"><use href="#i-alert"/></svg><div>Every record below is an <b>unverified draft</b>. Summaries and identifiers were written for this prototype and must be checked against the official source before use. Links point to the issuing body; a provision-level link is added during review. Project review is not formal legal review.</div></div></article>
+  <article class="card"><div class="card-h"><div><h3 class="card-t">Key provisions</h3><p class="card-s">Plain-English summaries of {{gv.kbStats.total}} provisions the auditor links your results to. Open the official source before relying on one.</p></div></div></article>
   <div class="chips"><sc-for list="{{gv.kbFilters}}" as="f"><button type="button" class="{{f.cls}}" onClick="{{f.go}}">{{f.label}}</button></sc-for></div>
   <div class="col"><sc-for list="{{gv.rules}}" as="r"><details class="rule"><summary><span class="badge b-{{r.inst.tone}}"><svg class="ic"><use href="#i-{{r.inst.icon}}"/></svg>{{r.framework}}</span><b>{{r.provision}}</b><span class="sp">{{r.title}}</span><span class="badge b-{{r.ver.tone}}"><svg class="ic"><use href="#i-{{r.ver.icon}}"/></svg>{{r.ver.label}}</span></summary>
     <div class="rule-b"><p>{{r.summary}}</p>
      <dl class="kv"><dt>Rule ID</dt><dd class="mono">{{r.id}}</dd><dt>Official source</dt><dd><a href="{{r.url}}" target="_blank" rel="noopener noreferrer">{{r.url}} ↗</a><div class="xs mute">{{r.urlNote}}</div></dd><dt>Source type</dt><dd>{{r.sourceType}}</dd><dt>Source version / date</dt><dd>{{r.version}}</dd><dt>Effective status</dt><dd>{{r.effective}}</dd><dt>Applicability conditions</dt><dd>{{r.conditions}}</dd><dt>Review date</dt><dd>{{r.reviewDate}}</dd><dt>Reviewer</dt><dd>{{r.reviewer}}</dd></dl>
      <div class="g2" style="gap:10px"><div class="field"><label for="rv-{{r.id}}">Reviewer name</label><input id="rv-{{r.id}}" type="text" value="{{r.form.reviewer}}" onChange="{{r.onReviewer}}"></div><div class="field"><label for="rn-{{r.id}}">Review note (what you checked)</label><input id="rn-{{r.id}}" type="text" value="{{r.form.note}}" onChange="{{r.onNote}}"></div></div>
-     <div class="row"><button type="button" class="btn btn-sm btn-primary" onClick="{{r.mark}}" disabled="{{!r.canMark}}">Mark as project-reviewed</button><button type="button" class="btn btn-sm" onClick="{{r.reset}}">Reset to draft</button><span class="xs mute">Only after opening the official source and confirming the provision, version and conditions.</span></div></div></details></sc-for></div>
+     <div class="row"><button type="button" class="btn btn-sm btn-primary" onClick="{{r.mark}}" disabled="{{!r.canMark}}">Mark as reviewed</button><button type="button" class="btn btn-sm" onClick="{{r.reset}}">Undo review</button><span class="xs mute">Mark it only after reading the official source.</span></div></div></details></sc-for></div>
  </sc-if>
 
  <sc-if value="{{gv.tAp}}"><sc-if value="{{!gv.hasAudit}}"><div class="empty"><div class="empty-ic"><svg class="ic"><use href="#i-scale"/></svg></div><h3>No audit selected</h3><p>Applicability, mappings, recommendations, evidence gaps and review all belong to an audit. The catalogue and knowledge base above are available without one.</p><div class="cta-row"><button type="button" class="btn btn-primary" onClick="{{empty.newAudit}}">Start New Audit</button><button type="button" class="btn" onClick="{{empty.demo}}">Load demo pair</button></div></div></sc-if></sc-if>
@@ -1489,7 +1491,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
   <sc-if value="{{gv.tAp}}">
    <article class="card"><div class="card-h"><div><h3 class="card-t">Answers supplied</h3><p class="card-s">The context used for screening. “Not provided” is a gap, never a failed check.</p></div><div class="row"><span class="badge b-{{gv.kind.tone}}"><svg class="ic"><use href="#i-{{gv.kind.icon}}"/></svg>{{gv.kind.label}}</span><button type="button" class="btn btn-sm" onClick="{{gv.editCtx}}"><svg class="ic"><use href="#i-edit"/></svg>Edit context</button></div></div>
     <dl class="kv"><sc-for list="{{gv.answers}}" as="a"><dt>{{a.label}}</dt><dd class="{{a.cls}}">{{a.value}}</dd></sc-for></dl></article>
-   <article class="card"><div class="card-h"><div><h3 class="card-t">Applicability screening</h3><p class="card-s">Selecting a framework or uploading a certain kind of data never makes a law apply. Each status comes with its reason.</p></div></div>
+   <article class="card"><div class="card-h"><div><h3 class="card-t">Applicability screening</h3><p class="card-s">Based on the answers above, with reasons.</p></div></div>
     <sc-if value="{{gv.hasSuggested}}"><div class="note n-blue" style="margin-bottom:10px"><svg class="ic"><use href="#i-info"/></svg><div>Frameworks suggested by the regions given: <b>{{gv.suggested}}</b>.</div></div></sc-if>
     <sc-if value="{{!gv.hasApplic}}"><p class="small mute">No frameworks were selected for review in the governance context. Use “Edit context” to select some.</p></sc-if>
     <sc-if value="{{gv.hasApplic}}"><div class="tw"><table class="t"><thead><tr><th>Framework</th><th>Type</th><th>Applicability</th><th>Reason</th><th>Questions still open</th></tr></thead><tbody>
@@ -1497,7 +1499,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
   </sc-if>
 
   <sc-if value="{{gv.tMap}}"><article class="card">
-   <div class="card-h"><div><h3 class="card-t">Evidence-to-rule mapping</h3><p class="card-s">{{gv.mapCount}} of {{gv.mapTotal}} mappings shown (scroll the table sideways for all nine columns) · each traces to a measured finding, a governance answer, or an identified documentation gap</p></div>
+   <div class="card-h"><div><h3 class="card-t">Evidence-to-rule mapping</h3><p class="card-s">{{gv.mapCount}} of {{gv.mapTotal}} links between your results and the law</p></div>
     <div class="row"><select aria-label="Framework" name="ui.mapFw" value="{{act.uiMapFw}}" onChange="{{act.setField}}" style="width:auto"><sc-for list="{{gv.mapFwOpts}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select>
      <select aria-label="Evidence sufficiency" name="ui.mapSuf" value="{{act.uiMapSuf}}" onChange="{{act.setField}}" style="width:auto"><option value="all">Any sufficiency</option><option value="Sufficient">Sufficient</option><option value="Partial">Partial</option><option value="Insufficient">Insufficient</option></select>
      <select aria-label="Review status" name="ui.mapRev" value="{{act.uiMapRev}}" onChange="{{act.setField}}" style="width:auto"><option value="all">Any review status</option><option value="Pending">Pending</option><option value="Accepted">Accepted</option><option value="Rejected">Rejected</option><option value="Needs More Information">Needs More Information</option><option value="Completed">Completed</option></select>
@@ -1512,17 +1514,17 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
   <sc-if value="{{gv.tRec}}">
    <sc-if value="{{!gv.hasRecs}}"><div class="empty"><h3>No recommendations</h3><p>The evidence and context supplied did not trigger any mapping rule. That is not a clearance.</p></div></sc-if>
    <div class="col"><sc-for list="{{gv.recs}}" as="r"><article class="card">
-    <div class="card-h"><div><div class="xs mute">{{r.id}}</div><h3 class="card-t">{{r.title}}</h3></div><div class="row"><span class="badge b-{{r.priority.tone}}"><svg class="ic"><use href="#i-{{r.priority.icon}}"/></svg>{{r.priority.label}}</span><span class="badge b-{{r.kindBd.tone}}"><svg class="ic"><use href="#i-{{r.kindBd.icon}}"/></svg>{{r.kind}}</span><sc-if value="{{r.human}}"><span class="badge b-red"><svg class="ic"><use href="#i-user"/></svg>Human reviewer needed</span></sc-if><sc-if value="{{r.draft}}"><span class="badge b-amber"><svg class="ic"><use href="#i-alert"/></svg>Draft rule</span></sc-if></div></div>
+    <div class="card-h"><div><div class="xs mute">{{r.id}}</div><h3 class="card-t">{{r.title}}</h3></div><div class="row"><span class="badge b-{{r.priority.tone}}"><svg class="ic"><use href="#i-{{r.priority.icon}}"/></svg>{{r.priority.label}}</span><span class="badge b-{{r.kindBd.tone}}"><svg class="ic"><use href="#i-{{r.kindBd.icon}}"/></svg>{{r.kind}}</span><sc-if value="{{r.human}}"><span class="badge b-red"><svg class="ic"><use href="#i-user"/></svg>Human reviewer needed</span></sc-if></div></div>
     <dl class="kv"><dt>What was detected / is unknown</dt><dd>{{r.detected}}</dd><dt>Why it may matter</dt><dd><sc-for list="{{r.why}}" as="w"><div>{{w}}</div></sc-for></dd><dt>What to review or improve</dt><dd>{{r.review}}</dd><dt>Related source / control</dt><dd><sc-for list="{{r.controls}}" as="c"><div>{{c}}</div></sc-for><div class="row mt"><sc-for list="{{r.urls}}" as="u"><a class="small" href="{{u.u}}" target="_blank" rel="noopener noreferrer">Source {{u.n}} ↗</a></sc-for></div></dd></dl>
    </article></sc-for></div>
   </sc-if>
 
   <sc-if value="{{gv.tGap}}"><article class="card">
-   <div class="card-h"><div><h3 class="card-t">Missing evidence and cross-validation</h3><p class="card-s">{{gv.gapStats.genuine}} genuine failure(s) · {{gv.gapStats.notprov}} item(s) simply not provided, not run or not available</p></div></div>
+   <div class="card-h"><div><h3 class="card-t">Missing evidence and cross-validation</h3><p class="card-s">{{gv.gapStats.genuine}} failed · {{gv.gapStats.notprov}} not provided</p></div></div>
    <div class="col"><sc-for list="{{gv.gaps}}" as="g"><div class="row" style="align-items:flex-start;flex-wrap:nowrap;padding:8px 0;border-bottom:1px solid var(--line)"><span class="badge b-{{g.kind.tone}}" style="min-width:170px"><svg class="ic"><use href="#i-{{g.kind.icon}}"/></svg>{{g.kind.label}}</span><div class="sp"><div class="small">{{g.text}}</div><div class="xs mute">{{g.note}}</div></div></div></sc-for></div></article></sc-if>
 
   <sc-if value="{{gv.tRev}}"><article class="card">
-   <div class="card-h"><div><h3 class="card-t">Human review</h3><p class="card-s">Decisions are stored with the audit. The machine-generated finding is never overwritten; every change is kept in the history.</p></div></div>
+   <div class="card-h"><div><h3 class="card-t">Human review</h3><p class="card-s">Record your team’s decisions.</p></div></div>
    <div class="row" style="margin-bottom:10px"><sc-for list="{{gv.revCounts}}" as="c"><span class="badge b-{{c.bd.tone}}"><svg class="ic"><use href="#i-{{c.bd.icon}}"/></svg>{{c.label}}: {{c.n}}</span></sc-for></div>
    <sc-if value="{{!gv.hasReviews}}"><p class="small mute">There are no mappings to review.</p></sc-if>
    <div class="col"><sc-for list="{{gv.reviews}}" as="r"><details class="rule"><summary><span class="badge b-{{r.status.tone}}"><svg class="ic"><use href="#i-{{r.status.icon}}"/></svg>{{r.status.label}}</span><span class="sp">{{r.title}}</span></summary>
@@ -1534,12 +1536,13 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
 
 <!-- ============================ BENCHMARK ============================ -->
 <sc-if value="{{pg.bench}}"><div class="page">
- <div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div class="sp"><b>Offline results, not computed in this browser.</b> {{bn.note}} Each attack is read on its own: <span class="stl"><i class="sq sq-amber" aria-hidden="true"></i>amber</span> marks a result whose 95% interval excludes chance. Nothing is averaged into one risk score.</div><span class="badge b-navy"><svg class="ic"><use href="#i-layers"/></svg>Benchmark · offline</span></div>
+ <sc-if value="{{bn.team}}"><div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div class="sp"><b>Team view.</b> {{bn.note}} Each attack is read on its own: <span class="stl"><i class="sq sq-amber" aria-hidden="true"></i>amber</span> marks a result whose 95% interval excludes chance. Nothing is averaged into one risk score.</div></div></sc-if>
+ <sc-if value="{{!bn.team}}"><sc-if value="{{!bn.hasDetail}}"><div class="empty"><div class="empty-ic"><svg class="ic"><use href="#i-archive"/></svg></div><h3>Pick a result</h3><p>Open a generated audit from Past audits.</p><div class="cta-row"><button type="button" class="btn btn-primary" onClick="{{bn.goPast}}">Past audits</button></div></div></sc-if></sc-if>
 
  <sc-if value="{{bn.hasDetail}}"><div class="page" style="gap:20px">
-  <div class="row"><button type="button" class="btn btn-sm" onClick="{{bn.detail.close}}"><svg class="ic" style="transform:rotate(180deg)"><use href="#i-arrow"/></svg>All datasets</button><span class="small mute">{{bn.detail.tally}}</span></div>
+  <div class="row"><button type="button" class="btn btn-sm" onClick="{{bn.detail.close}}"><svg class="ic" style="transform:rotate(180deg)"><use href="#i-arrow"/></svg>{{bn.detail.backLabel}}</button><span class="small mute">{{bn.detail.tally}}</span></div>
   <article class="card">
-   <div class="card-h"><div><h2 class="bn-h">{{bn.detail.name}}</h2><p class="card-s">{{bn.detail.group}}<sc-if value="{{bn.detail.hasUci}}"> · <a href="{{bn.detail.uciUrl}}" target="_blank" rel="noopener noreferrer">{{bn.detail.uci}} on the UCI repository</a></sc-if></p></div><sc-if value="{{bn.detail.isImp}}"><span class="badge b-navy"><svg class="ic"><use href="#i-upload"/></svg>Imported in this browser</span></sc-if></div>
+   <div class="card-h"><div><h2 class="bn-h">{{bn.detail.name}}</h2><p class="card-s">{{bn.detail.group}}<sc-if value="{{bn.detail.hasUci}}"> · <a href="{{bn.detail.uciUrl}}" target="_blank" rel="noopener noreferrer">{{bn.detail.uci}} on the UCI repository</a></sc-if></p></div></div>
    <dl class="kv"><sc-for list="{{bn.detail.facts}}" as="p"><dt>{{p.k}}</dt><dd>{{p.v}}</dd></sc-for></dl>
    <sc-if value="{{bn.detail.hasCleaning}}"><details class="help mt"><summary><svg class="ic"><use href="#i-wand"/></svg>Cleaning steps recorded by the pipeline</summary><div class="help-b"><ul class="small" style="margin:0;padding-left:18px"><sc-for list="{{bn.detail.cleaning}}" as="c"><li>{{c}}</li></sc-for></ul></div></details></sc-if>
   </article>
@@ -1573,10 +1576,10 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
     <p class="xs mute mt">Limitation: {{c.lim}}</p>
    </sc-if>
   </article></sc-for>
-  <div class="note n-grey"><svg class="ic"><use href="#i-info"/></svg><div>No combined risk category is given. The ensemble rules in this app (EPE-0.1) set thresholds only for the two browser attacks, so the four Anonymeter and shadow-model results are shown as they are, next to each other.</div></div>
+  <div class="note n-grey"><svg class="ic"><use href="#i-info"/></svg><div>Each test is read on its own; amber means its 95% interval excludes chance.</div></div>
  </div></sc-if>
 
- <sc-if value="{{!bn.hasDetail}}"><div class="page" style="gap:20px">
+ <sc-if value="{{bn.team}}"><sc-if value="{{!bn.hasDetail}}"><div class="page" style="gap:20px">
   <div class="g4"><sc-for list="{{bn.kpis}}" as="k"><article class="card"><div class="bigstat"><span class="small mute">{{k.k}}</span><span class="bigv">{{k.v}}</span><span class="xs mute">{{k.sub}}</span></div></article></sc-for></div>
 
   <article class="card"><div class="card-h"><div><h3 class="card-t">Each attack across the datasets shown</h3><p class="card-s">Median and highest raw value, and how many datasets cross chance. Attacks use different scales, so their numbers are never added or averaged together.</p></div></div>
@@ -1604,14 +1607,13 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
   <article class="card"><div class="card-h"><div><h3 class="card-t">Import pipeline results</h3><p class="card-s">Results of the Python pipeline (<span class="mono">pipeline/sda_pipeline.py</span>, or the study's Colab notebooks) can be imported here: per-dataset <span class="mono">.json</span> files or the <span class="mono">all_results_*.json</span> bundles. They hold metrics only, no data rows. Only the metrics are read and kept, in this browser.</p></div></div>
    <div class="cta-row"><label class="btn btn-primary" for="bn-file"><svg class="ic"><use href="#i-upload"/></svg>Choose result files (.json)</label><input class="sr" id="bn-file" type="file" multiple accept=".json,application/json" onChange="{{bn.pick}}"><sc-if value="{{bn.hasImp}}"><button type="button" class="btn" onClick="{{bn.removeAll}}"><svg class="ic"><use href="#i-trash"/></svg>Remove all {{bn.impCount}} imported</button></sc-if></div>
    <sc-if value="{{bn.hasImp}}"><div class="tw mt"><table class="t"><thead><tr><th>Imported dataset</th><th>Generator</th><th><span class="sr">Remove</span></th></tr></thead><tbody><sc-for list="{{bn.imp}}" as="i"><tr><td class="b">{{i.name}}</td><td class="small">{{i.gen}}</td><td class="num"><button type="button" class="more" onClick="{{i.remove}}">Remove</button></td></tr></sc-for></tbody></table></div></sc-if>
-   <p class="xs mute mt">New Audit runs the two browser attacks only. To run all six on your own data, use <button type="button" class="link-btn" onClick="{{act.goServer}}">Full audit (server)</button>; its results appear here too.</p>
   </article>
- </div></sc-if>
+ </div></sc-if></sc-if>
 </div></sc-if>
 
 <!-- ============================ COMPARE ============================ -->
 <sc-if value="{{pg.compare}}"><div class="page">
- <article class="card"><div class="card-h"><div><h3 class="card-t">Filters</h3><p class="card-s">Filters update the charts and the table together. Generator and task are shown only where they were recorded.</p></div><button type="button" class="btn btn-sm" onClick="{{cm.clear}}">Clear filters</button></div>
+ <article class="card"><div class="card-h"><div><h3 class="card-t">Filters</h3><p class="card-s">Narrow down the audits shown</p></div><button type="button" class="btn btn-sm" onClick="{{cm.clear}}">Clear filters</button></div>
   <div class="g4">
    <div class="field"><label for="c-q">Dataset name</label><input id="c-q" type="text" name="cmp.q" value="{{cm.filters.q}}" onChange="{{act.setField}}" placeholder="Search…"></div>
    <div class="field"><label for="c-d">Domain</label><select id="c-d" name="cmp.domain" value="{{cm.filters.valDomain}}" onChange="{{act.setField}}"><sc-for list="{{cm.filters.domain.opts}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
@@ -1621,13 +1623,13 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
    <div class="field"><label for="c-o">Data source</label><select id="c-o" name="cmp.source" value="{{cm.filters.valSource}}" onChange="{{act.setField}}"><sc-for list="{{cm.filters.source.opts}}" as="o"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
    <div class="field"><label for="c-so">Sort by</label><select id="c-so" name="cmp.sort" value="{{cm.filters.sort}}" onChange="{{act.setField}}"><option value="name">Name</option><option value="fid">Fidelity (high first)</option><option value="ret">Utility retention (high first)</option><option value="mia">MIA AUC (high first)</option><option value="date">Newest first</option></select></div>
   </div>
-  <div class="legend mt"><span class="lg"><span class="sw sw-hist"></span>Historical baseline</span><span class="lg"><span class="sw sw-bench"></span>Benchmark · offline pipeline</span><span class="lg"><span class="sw sw-cur"></span>Current audit</span><span class="lg"><span class="sw sw-demo"></span>Demo audit</span><span class="xs">Showing {{cm.count}} of {{cm.total}} rows</span></div></article>
- <sc-if value="{{!cm.hasCurrent}}"><div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div>Only reference results are available: the historical baseline and the offline six-attack benchmark. Run an audit (or load the demo pair) to compare your own pair against them.</div></div></sc-if>
+  <div class="legend mt"><span class="lg"><span class="sw sw-bench"></span>Generated &amp; audited</span><span class="lg"><span class="sw sw-cur"></span>Audit</span><span class="lg"><span class="sw sw-demo"></span>Demo audit</span><span class="xs">Showing {{cm.count}} of {{cm.total}} rows</span></div></article>
+ <sc-if value="{{!cm.hasRows}}"><sc-if value="{{!cm.total}}"><div class="note n-blue"><svg class="ic"><use href="#i-info"/></svg><div>Run two or more audits to compare them here.</div></div></sc-if></sc-if>
  <sc-if value="{{!cm.hasRows}}"><div class="empty"><h3>No rows match these filters</h3><p>Clear the filters to see everything.</p></div></sc-if>
  <sc-if value="{{cm.hasRows}}">
   <div class="g2"><sc-for list="{{cm.charts}}" as="ch"><article class="card"><div class="card-h"><div><h3 class="card-t">{{ch.title}}</h3><p class="card-s">{{ch.sub}}</p></div></div>
    <sc-for list="{{ch.rows}}" as="r"><div class="brow" title="{{r.tip}}"><div class="bl"><span class="bn">{{r.label}}</span><span class="bs">{{r.sub}}</span></div><div class="track tr-{{r.cls}}"><div class="fill f-{{r.cls}}" style="width: {{r.w}}%"></div></div><div class="bv">{{r.text}}</div></div></sc-for></article></sc-for></div>
-  <article class="card"><div class="card-h"><div><h3 class="card-t">Comparison table</h3><p class="card-s">“N/A” and “Not recorded” are unavailable values — never zero. Baseline rows carry no coverage, ensemble or governance records.</p></div></div>
+  <article class="card"><div class="card-h"><div><h3 class="card-t">Comparison table</h3><p class="card-s">N/A means not available, never zero</p></div></div>
    <div class="tw"><table class="t" style="min-width:1600px"><thead><tr><th>Dataset</th><th>Data</th><th>Domain / task / generator</th><th>Status</th><th class="num">Overall quality</th><th class="num">Col. shapes</th><th class="num">Pair trends</th><th class="num">Corr. diff.</th><th class="num">Utility retention</th><th class="num">MIA AUC</th><th>Privacy coverage</th><th>Ensemble</th><th class="num">Gov. mappings</th><th></th></tr></thead><tbody>
     <sc-for list="{{cm.rows}}" as="r"><tr><td style="min-width:170px"><div class="b">{{r.name}}</div><div class="xs mute">{{r.date}}</div><sc-if value="{{r.hasFlag}}"><div class="xs" style="color:var(--amber)">{{r.flag}}</div></sc-if></td><td><span class="badge b-{{r.kindBd.tone}}"><svg class="ic"><use href="#i-{{r.kindBd.icon}}"/></svg>{{r.kindBd.label}}</span></td><td class="small">{{r.domain}}<br>{{r.task}}<br>{{r.generator}}</td><td><span class="badge b-{{r.statusBd.tone}}"><svg class="ic"><use href="#i-{{r.statusBd.icon}}"/></svg>{{r.statusBd.label}}</span></td>
      <td class="num mono">{{r.overall}}</td><td class="num mono">{{r.shapes}}</td><td class="num mono">{{r.trends}}</td><td class="num mono">{{r.corr}}</td><td class="num mono">{{r.ret}}<div class="xs mute">{{r.retMetric}}</div></td><td class="num mono">{{r.mia}}</td><td class="small">{{r.cov}}</td><td><sc-if value="{{r.hasEns}}"><span class="badge b-{{r.ens.tone}}">{{r.ens.label}}</span></sc-if><sc-if value="{{!r.hasEns}}"><span class="mute small">Not recorded</span></sc-if></td><td class="num">{{r.gov}}</td>
@@ -1663,7 +1665,7 @@ select,textarea,input[type=text],input[type=number],input[type=search],input[typ
  </sc-if>
 
  <sc-if value="{{rpT.registry}}">
-  <article class="card"><div class="card-h"><div><h3 class="card-t">Results registry</h3><p class="card-s">{{rp.reg.count}} normalised records for this run. The score is stored apart from its interpretation; unavailable values are null with a reason, never zero.</p></div>
+  <article class="card"><div class="card-h"><div><h3 class="card-t">Results registry</h3><p class="card-s">{{rp.reg.count}} results, machine-readable</p></div>
    <div class="row" style="gap:8px"><select aria-label="Filter by engine" name="ui.regEngine" value="{{rp.reg.eng}}" onChange="{{act.setField}}" style="width:auto"><sc-for list="{{rp.reg.engines}}" as="e"><option value="{{e.id}}">{{e.label}}</option></sc-for></select><button type="button" class="btn btn-sm" onClick="{{rp.reg.csv}}"><svg class="ic"><use href="#i-download"/></svg>CSV</button><button type="button" class="btn btn-sm" onClick="{{rp.reg.json}}"><svg class="ic"><use href="#i-download"/></svg>JSON</button></div></div>
    <sc-if value="{{rp.reg.legacy}}"><div class="note n-grey" style="margin-bottom:14px"><svg class="ic"><use href="#i-info"/></svg><div>This audit was created before provenance tracking, so engine versions and fingerprints read “not recorded”.</div></div></sc-if>
    <div class="tw"><table class="t" style="min-width:860px"><thead><tr><th>Engine</th><th>Metric</th><th class="num">Value</th><th>Unit</th><th>Status</th><th>Version</th><th>Evidence / limitation</th></tr></thead><tbody>
@@ -1703,9 +1705,9 @@ constructor(props) {
     cl: this.blankCl(), ui: { regEngine: 'all', vaDraft: false, vaFilter: 'all', fidCol: null, fidTab: 'dist', fidSort: 'score', fidDir: 'asc', utTab: 'metrics', utMetric: null, gvTab: 'frameworks', fwType: 'all', kbFw: 'all', mapFw: 'all', mapSuf: 'all', mapRev: 'all' },
     cmp: { q: '', domain: '', task: '', generator: '', status: '', source: '', sort: 'name' }, kbForm: {}, rvForm: {}, exportLog: {}, confirmDel: null, confirmClearAll: false,
     bn: { q: '', group: '', task: '', sig: '', sort: 'name', sel: null }, benchImported: [],
-    sv: this.blankSv('')
+    sv: this.blankSv(''), saved: {}, recLoading: false, recError: '', keyDraft: '', pastQ: ''
   };
-  this.svFiles = {}; this.svTimer = null;
+  this.svFiles = {}; this.svTimer = null; this.srvTimers = {};
   this.A = this.makeActions();
 }
 newDraft() { return { step: 1, info: Object.assign({}, SDA.defaults.info), settings: Object.assign({}, SDA.defaults.settings), gov: SDA.kb.defaultContext(), realMeta: null, synthMeta: null, validation: null, rawValidation: null, validated: false, demo: false, hints: { cat: [], ids: [] }, suggestion: null, taskHint: null, use: { real: 'raw', synth: 'raw' }, editingAuditId: null }; }
@@ -1776,7 +1778,7 @@ async svFetch(path, opts, timeoutMs) {
 async svCheck() {
   if (!this.svBase()) return;
   this.svSet({ checking: true, healthError: '' });
-  try { const h = await this.svFetch('/api/health', null, 70000); if (!h || h.service !== 'synthetic-data-auditor') throw new Error('This address answered, but it is not the Synthetic Data Auditor API.'); this.svSet({ health: h, checking: false }); }
+  try { const h = await this.svFetch('/api/health', null, 70000); if (!h || h.service !== 'synthetic-data-auditor') throw new Error('This address answered, but it is not the Synthetic Data Auditor API.'); const first = !this.state.sv.health; this.svSet({ health: h, checking: false }); if (first) { this.recSync(); this.srvResume(); } }
   catch (e) { this.svSet({ health: null, healthError: e.message || String(e), checking: false }); }
 }
 svSaveUrl() {
@@ -1850,13 +1852,89 @@ svForget() { try { localStorage.removeItem('sda.v1.svjob'); } catch (e) { /* ign
 svDone(j) {
   this.svForget();
   let r; try { r = SDA.benchNormalize(j.result, 'imported'); } catch (e) { this.flash('The server returned a result this page cannot read: ' + (e.message || e), 'err'); return; }
-  this.svResultKey = r.key;
-  this.setState(s => ({ benchImported: s.benchImported.filter(x => x.key !== r.key).concat([r]).slice(-200) }), () => { this.persistBench(); this.flash('Full audit finished: ' + r.completed + ' of 6 attacks completed. The result is on the Benchmark page.', 'ok'); });
+  this.svResultKey = r.key; r.recId = 'GEN-' + String(j.id).slice(0, 16); r.savedAt = Date.now() / 1000;
+  this.setState(s => ({ benchImported: s.benchImported.filter(x => x.key !== r.key).concat([r]).slice(-200) }), () => { this.persistBench(); this.recPut(r.recId, { name: r.name, createdAt: new Date().toISOString(), kind: 'generated', status: r.completed + ' of 6' }, j.result); this.flash('Finished: ' + r.completed + ' of 6 privacy tests completed. Saved in Past audits.', 'ok'); });
 }
 async svCancel() {
   const J = this.state.sv.job; if (!J) return;
   try { await this.svFetch('/api/jobs/' + J.id, { method: 'DELETE' }, 20000); this.flash('Cancelling the job. The server deletes the uploaded files.', 'info'); }
   catch (e) { this.flash('Could not cancel: ' + (e.message || e), 'err'); }
+}
+/* ───────── the four server privacy tests for a browser audit ───────── */
+updAudit(id, fn, cb) { this.setState(s => ({ audits: s.audits.map(x => x.id === id ? fn(x) : x) }), cb); }
+setSrv(id, o, cb) { this.updAudit(id, x => { if (!x.results || !x.results.privacy) return x; const P = Object.assign({}, x.results.privacy, { server: Object.assign({}, x.results.privacy.server || {}, o) }); return Object.assign({}, x, { results: Object.assign({}, x.results, { privacy: P }) }); }, cb); }
+async srvRun(id) {
+  const a = this.state.audits.find(x => x.id === id); const raw = this.rawAudit[id];
+  if (!a || !raw || !a.settings.doPrivacy || !a.results.privacy || !(a.results.privacy.pending || []).length || !a.results.validation || !a.results.validation.plan) return;
+  const fail = msg => this.setSrv(id, { status: 'failed', error: msg }, () => { this.persist(); this.recSave(id); });
+  if (!this.svBase()) { fail('No auditor server is set up for this site.'); return; }
+  if (!this.state.sv.health) { await this.svCheck(); if (!this.state.sv.health) { fail('The auditor server is not reachable right now (' + (this.state.sv.healthError || 'no answer') + ').'); return; } }
+  let up; try { up = SDA.serverPrivacy.upload(raw.real, raw.synth, a.results.validation.plan, a.settings); } catch (e) { fail(e.message || String(e)); return; }
+  const fd = new FormData();
+  fd.append('mode', 'audit'); fd.append('target', up.target); fd.append('task', up.task); fd.append('name', a.name); fd.append('membership_column', up.memberCol); fd.append('steps', up.steps);
+  fd.append('real', new Blob([up.real], { type: 'text/csv' }), 'real.csv'); fd.append('synthetic', new Blob([up.synth], { type: 'text/csv' }), 'synthetic.csv');
+  this.setSrv(id, { status: 'uploading', error: '' });
+  try {
+    const j = await this.svFetch('/api/jobs', { method: 'POST', body: fd }, 300000);
+    this.setSrv(id, { status: j.status, jobId: j.id, url: this.svBase(), info: { members: up.members, nonMembers: up.nonMembers, note: up.note, columns: up.columns } }, () => { this.persist(); this.srvPoll(id); });
+  } catch (e) { fail(e.message || String(e)); }
+}
+srvPoll(id) {
+  clearTimeout(this.srvTimers[id]);
+  const keys = ['clean', 'prepare', 'mia_shadow', 'singling_out', 'linkability', 'attribute_inference', 'assemble'];
+  const tick = async () => {
+    const a = this.state.audits.find(x => x.id === id); const SV = a && a.results.privacy && a.results.privacy.server; if (!SV || !SV.jobId || SV.status === 'completed' || SV.status === 'failed') return;
+    let j;
+    try { j = await this.svFetch('/api/jobs/' + SV.jobId, null, 30000); }
+    catch (e) { if (e.status === 404) { this.setSrv(id, { status: 'failed', error: 'the server no longer has this job (it may have restarted)' }, () => this.persist()); return; } this.srvTimers[id] = setTimeout(tick, 8000); return; }
+    if (j.status === 'completed') { this.updAudit(id, x => SDA.mergeServerPrivacy(x, j.result, SV.info), () => { this.persist(); this.recSave(id); this.flash('All privacy tests finished for “' + a.name + '”.', 'ok'); }); return; }
+    if (j.status === 'failed' || j.status === 'cancelled') { this.setSrv(id, { status: 'failed', error: j.error || 'the server job stopped' }, () => { this.persist(); this.recSave(id); }); return; }
+    const st = (j.steps || []).filter(x => keys.indexOf(x.key) >= 0); const done = st.filter(x => ['completed', 'failed', 'not_run', 'skipped', 'not_applicable'].indexOf(x.status) >= 0).length;
+    this.setSrv(id, { status: j.status, done, of: st.length });
+    this.srvTimers[id] = setTimeout(tick, j.status === 'queued' ? 4000 : 3000);
+  };
+  this.srvTimers[id] = setTimeout(tick, 1500);
+}
+srvResume() { this.state.audits.forEach(a => { const SV = a.results && a.results.privacy && a.results.privacy.server; if (SV && SV.jobId && SV.url === this.svBase() && ['queued', 'running', 'uploading'].indexOf(SV.status) >= 0) this.srvPoll(a.id); }); }
+/* ───────── past audits, saved on the server under a private browser key ───────── */
+recKey() {
+  if (this._key) return this._key; let k = null;
+  try { k = localStorage.getItem('sda.v1.key'); } catch (e) { /* storage blocked */ }
+  if (!k || !/^[A-Za-z0-9_-]{24,128}$/.test(k)) { const b = new Uint8Array(24); (window.crypto || window.msCrypto).getRandomValues(b); k = Array.from(b, x => x.toString(16).padStart(2, '0')).join(''); try { localStorage.setItem('sda.v1.key', k); } catch (e) { /* kept for this visit */ } }
+  this._key = k; return k;
+}
+recHeaders(extra) { return Object.assign({ 'X-SDA-Key': this.recKey() }, extra || {}); }
+async recPut(id, meta, record) {
+  if (!this.svBase()) return false;
+  try { await this.svFetch('/api/records/' + encodeURIComponent(id), { method: 'PUT', headers: this.recHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ meta, record }) }, 60000); this.setState(s => ({ saved: Object.assign({}, s.saved, { [id]: true }) })); return true; }
+  catch (e) { this.setState(s => ({ saved: Object.assign({}, s.saved, { [id]: false }) })); return false; }
+}
+recSave(id) { const a = this.state.audits.find(x => x.id === id); if (a) return this.recPut(id, { name: a.name, createdAt: a.createdAt, status: a.status, kind: 'audit', source: a.source }, a); }
+async recSync() {
+  if (!this.svBase()) return;
+  this.setState({ recLoading: true, recError: '' });
+  try {
+    const L = await this.svFetch('/api/records', { headers: this.recHeaders() }, 70000);
+    const list = Array.isArray(L.records) ? L.records : []; const saved = {}; list.forEach(r => { saved[r.id] = true; });
+    const haveA = new Set(this.state.audits.map(a => a.id)), haveG = new Set(this.state.benchImported.map(b => b.recId).filter(Boolean));
+    const need = list.filter(r => r.meta && r.meta.kind === 'generated' ? !haveG.has(r.id) : !haveA.has(r.id)).slice(0, 80);
+    const got = [];
+    for (const r of need) { try { got.push(await this.svFetch('/api/records/' + encodeURIComponent(r.id), { headers: this.recHeaders() }, 30000)); } catch (e) { /* skip one unreadable record */ } }
+    const aud = got.filter(d => !(d.meta && d.meta.kind === 'generated')).map(d => d.record).filter(x => x && x.id && x.results && x.files);
+    const gens = got.filter(d => d.meta && d.meta.kind === 'generated').map(d => { try { return Object.assign(SDA.benchNormalize(d.record, 'imported'), { recId: d.id, savedAt: d.saved_at }); } catch (e) { return null; } }).filter(Boolean);
+    const localOnly = this.state.audits.filter(a => !saved[a.id]).map(a => a.id);
+    this.setState(s => ({ audits: s.audits.concat(aud.filter(x => !s.audits.some(y => y.id === x.id))), benchImported: s.benchImported.concat(gens.filter(g => !s.benchImported.some(b => b.key === g.key))), saved: Object.assign({}, s.saved, saved), recLoading: false }), () => { this.persist(); this.persistBench(); });
+    for (const id of localOnly) await this.recSave(id);
+  } catch (e) { this.setState({ recLoading: false, recError: e.message || String(e) }); }
+}
+async recDelete(id) { if (!this.svBase()) return; try { await this.svFetch('/api/records/' + encodeURIComponent(id), { method: 'DELETE', headers: this.recHeaders() }, 30000); } catch (e) { /* already gone or offline */ } }
+async recDeleteAll() { if (!this.svBase()) return; try { await this.svFetch('/api/records', { method: 'DELETE', headers: this.recHeaders() }, 30000); } catch (e) { /* offline */ } }
+useKey() {
+  const k = String(this.state.keyDraft || '').trim();
+  if (!/^[A-Za-z0-9_-]{24,128}$/.test(k)) { this.flash('That access key is not valid. Copy it exactly from the other device.', 'err'); return; }
+  try { localStorage.setItem('sda.v1.key', k); } catch (e) { /* kept for this visit */ }
+  this._key = k; this.rawAudit = {};
+  this.setState({ audits: [], benchImported: [], currentId: null, saved: {}, keyDraft: '' }, () => { this.persist(); this.persistBench(); this.recSync().then(() => this.flash('Showing the audits saved under that key.', 'ok')); });
 }
 flash(text, tone) {
   clearTimeout(this.flashTimer); this.setState({ flash: { text, tone: tone || 'info' } });
@@ -2041,7 +2119,7 @@ async runAudit() {
     const clean = {}; for (const k of ['real', 'synth']) if (versions[k] === 'cleaned') clean[k] = { log: C.log[k], fingerprint: await SDA.fingerprint(SDA.clean.toCsv(data[k])) };
     const audit = SDA.buildAudit({ id, source: D.demo ? 'demo' : 'upload', info: D.info, settings: D.settings, gov: D.gov, results: res, validation: v, real: data.real, synth: data.synth, rawReal: this.raw.real, rawSynth: this.raw.synth, fp: { real: D.realMeta && D.realMeta.fingerprint, synth: D.synthMeta && D.synthMeta.fingerprint }, versions, clean, rawValidation: D.rawValidation });
     this.rawAudit[id] = { real: data.real, synth: data.synth };
-    this.setState(s => ({ audits: s.audits.concat([audit]), currentId: id, busy: null, page: 'overview', progress: { pct: 100, label: 'Done' } }), () => { this.persist(); this.flash('Audit “' + audit.name + '” finished: ' + audit.status + '.', audit.status === 'Completed' ? 'ok' : 'warn'); });
+    this.setState(s => ({ audits: s.audits.concat([audit]), currentId: id, busy: null, page: 'overview', progress: { pct: 100, label: 'Done' } }), () => { this.persist(); this.recSave(id); this.flash(audit.settings.doPrivacy ? 'Browser tests finished. The other 4 privacy tests are now running on the server.' : 'Audit “' + audit.name + '” finished.', 'ok'); this.srvRun(id); });
   } catch (e) {
     this.setState({ busy: null }); SDA.cancel.flag = false;
     if (e && e.cancelled) this.flash('Run cancelled. Nothing was saved and no partial result is shown.', 'info'); else this.flash('The audit stopped unexpectedly: ' + (e.message || e) + '. Nothing was saved.', 'err');
@@ -2058,7 +2136,7 @@ async rerun() {
   this.setState({ busy: 'run', progress: { pct: 2, label: 'Re-running…' } }); await SDA.util.tick();
   try {
     SDA.cancel.flag = false; const res = await SDA.run(raw.real, raw.synth, a.results.validation, a.info, a.settings, { progress: (pct, label) => this.setState({ progress: { pct, label } }) }); res.validation = a.results.validation;
-    this.setState(s => ({ audits: s.audits.map(x => x.id === a.id ? Object.assign({}, x, { results: res, status: SDA.auditStatus(res, x.settings), durationMs: res.durationMs, createdAt: x.createdAt }) : x), busy: null }), () => { this.persist(); this.flash('Evaluations re-run with the stored settings and seed.', 'ok'); });
+    this.setState(s => ({ audits: s.audits.map(x => x.id === a.id ? Object.assign({}, x, { results: res, status: SDA.auditStatus(res, x.settings), durationMs: res.durationMs, createdAt: x.createdAt }) : x), busy: null }), () => { this.persist(); this.recSave(a.id); this.flash('Re-run with the same settings and seed. The server tests are running again.', 'ok'); this.srvRun(a.id); });
   } catch (e) { this.setState({ busy: null }); SDA.cancel.flag = false; this.flash(e && e.cancelled ? 'Re-run cancelled; the stored results are unchanged.' : 'Re-run failed: ' + (e.message || e), e && e.cancelled ? 'info' : 'err'); }
 }
 
@@ -2113,6 +2191,7 @@ makeActions() {
       if (root === 'bn') { this.setState(s => ({ bn: Object.assign({}, s.bn, { [key]: val }) })); return; }
       if (root === 'sv') { if (key === 'target') { this.svTarget(val); return; } this.setState(s => ({ sv: Object.assign({}, s.sv, { [key]: val }, key === 'task' ? { taskHint: '' } : {}) })); return; }
       if (root === 'ui') { this.setState(s => ({ ui: Object.assign({}, s.ui, { [key]: val }) })); return; }
+      if (root === 'top') { this.setState({ [key]: val }); return; }
       const inval = ['info.target', 'info.task', 'info.categorical', 'info.idCols', 'settings.matchedOnly', 'settings.protocol', 'settings.membershipCol'].indexOf(name) >= 0;
       this.mutDraft(d => { d[root] = Object.assign({}, d[root], { [key]: val }); if (name === 'info.task') d.settings = Object.assign({}, d.settings, { primary: '' }); if (name === 'info.target' && this.raw.real) { const t = SDA.utility.suggestTask(this.raw.real, String(val).trim()); if (t) d.info = Object.assign({}, d.info, { task: t.task }); d.settings = Object.assign({}, d.settings, { primary: '' }); } }, inval);
     },
@@ -2140,6 +2219,11 @@ makeActions() {
     bnOpen: key => () => { this.setState(s => ({ bn: Object.assign({}, s.bn, { sel: key }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
     bnOpenPage: key => () => { this.setState(s => ({ page: 'bench', confirmDel: null, bn: Object.assign({}, s.bn, { sel: key }) })); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
     bnClose: () => this.setState(s => ({ bn: Object.assign({}, s.bn, { sel: null }) })),
+    srvRetry: id => () => this.srvRun(id),
+    pastOpen: id => () => { this.setState({ currentId: id, page: 'overview', confirmDel: null }); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
+    pastDelete: id => () => { delete this.rawAudit[id]; this.recDelete(id); this.setState(s => ({ audits: s.audits.filter(x => x.id !== id), currentId: s.currentId === id ? null : s.currentId }), () => { this.persist(); this.flash('Audit deleted.', 'info'); }); },
+    recSync: () => this.recSync(), useKey: () => this.useKey(),
+    copyKey: async () => { const k = this.recKey(); try { await navigator.clipboard.writeText(k); this.flash('Access key copied. Keep it private: anyone with it can see these audits.', 'ok'); } catch (e) { this.flash('Copy failed. Select the key and copy it by hand.', 'warn'); } },
     goServer: () => { this.setState({ page: 'server', confirmDel: null }); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } },
     svCheck: () => this.svCheck(), svSaveUrl: () => this.svSaveUrl(), svSubmit: () => this.svSubmit(), svCancel: () => this.svCancel(),
     svMode: m => () => this.setState(s => ({ sv: Object.assign({}, s.sv, { mode: m }) })),
@@ -2151,7 +2235,7 @@ makeActions() {
     svNew: () => { clearTimeout(this.svTimer); this.svForget(); this.svFiles = {}; this.svDs = null; this.setState(s => ({ sv: Object.assign(this.blankSv(s.sv.url), { health: s.sv.health, mode: s.sv.mode, generator: s.sv.generator }) })); },
     bnClear: () => this.setState(s => ({ bn: { q: '', group: '', task: '', sig: '', sort: 'name', sel: s.bn.sel } })),
     bnImport: e => { const fl = Array.from((e.target && e.target.files) || []); try { e.target.value = ''; } catch (x) { /* ignore */ } this.importBench(fl); },
-    bnRemove: key => () => this.setState(s => ({ benchImported: s.benchImported.filter(x => x.key !== key), bn: Object.assign({}, s.bn, { sel: s.bn.sel === key ? null : s.bn.sel }) }), () => { this.persistBench(); this.flash('Imported result removed from this browser.', 'info'); }),
+    bnRemove: key => () => { const g = this.state.benchImported.find(x => x.key === key); if (g && g.recId) this.recDelete(g.recId); this.setState(s => ({ benchImported: s.benchImported.filter(x => x.key !== key), bn: Object.assign({}, s.bn, { sel: s.bn.sel === key ? null : s.bn.sel }) }), () => { this.persistBench(); this.flash('Removed from Past audits.', 'info'); }); },
     bnRemoveAll: () => { const n = this.state.benchImported.length; this.setState(s => ({ benchImported: [], bn: Object.assign({}, s.bn, { sel: null, group: s.bn.group === 'Imported' ? '' : s.bn.group }) }), () => { this.persistBench(); this.flash(n + ' imported result' + (n === 1 ? '' : 's') + ' removed. Import the files again to bring them back.', 'info'); }); },
     bnCsv: () => this.saveFile('sda_benchmark_' + new Date().toISOString().slice(0, 10) + '.csv', SDA.benchCsv(this.state), 'CSV', true),
     kbField: (id, f) => e => { const v = e.target.value; this.setState(s => ({ kbForm: Object.assign({}, s.kbForm, { [id]: Object.assign({ reviewer: '', note: '' }, s.kbForm[id], { [f]: v }) }) })); },
@@ -2174,10 +2258,11 @@ makeActions() {
     exportJson: () => { const a = this.curAudit(); if (!a) return; this.saveFile(a.id + '_results.json', SDA.exp.auditJson(a, this.govFor(a)), 'JSON'); },
     exportZip: () => { const a = this.curAudit(); if (!a) return; this.setState({ busy: 'export', progress: { pct: 50, label: 'Bundling report, tables and plots…' } }); setTimeout(() => { try { const z = SDA.exp.bundle(a, this.govFor(a)); this.setState({ busy: null }); this.saveFile(a.id + '_audit_bundle.zip', new Blob([z], { type: 'application/zip' }), 'ZIP'); } catch (e) { this.setState({ busy: null }); this.flash('Could not build the bundle: ' + e.message, 'err'); } }, 30); },
     clearSelection: () => this.setState({ currentId: null, confirmClearAll: false }),
+    keyMask: () => { const k = this.recKey(); return k.slice(0, 6) + '…' + k.slice(-4); },
     askClearAll: () => this.setState({ confirmClearAll: true }), cancelClearAll: () => this.setState({ confirmClearAll: false }),
-    clearAll: () => { const n = this.state.audits.length; this.rawAudit = {}; this.setState({ audits: [], currentId: null, exportLog: {}, confirmClearAll: false, confirmDel: null }, () => { this.persist(); this.flash(n + ' audit' + (n === 1 ? '' : 's') + ' removed from this browser.', 'info'); }); },
+    clearAll: () => { const n = this.state.audits.length + this.state.benchImported.length; this.rawAudit = {}; this.recDeleteAll(); this.setState({ audits: [], benchImported: [], currentId: null, exportLog: {}, confirmClearAll: false, confirmDel: null, saved: {} }, () => { this.persist(); this.persistBench(); this.flash(n + ' audit' + (n === 1 ? '' : 's') + ' removed from this browser.', 'info'); }); },
     askDelete: () => this.setState({ confirmDel: this.state.currentId }), cancelDelete: () => this.setState({ confirmDel: null }),
-    deleteAudit: () => { const id = this.state.currentId; delete this.rawAudit[id]; this.setState(s => { const audits = s.audits.filter(x => x.id !== id); return { audits, currentId: null, confirmDel: null, page: 'overview' }; }, () => { this.persist(); this.flash('Audit removed from this browser.', 'info'); }); }
+    deleteAudit: () => { const id = this.state.currentId; delete this.rawAudit[id]; this.recDelete(id); this.setState(s => { const audits = s.audits.filter(x => x.id !== id); return { audits, currentId: null, confirmDel: null, page: 'overview' }; }, () => { this.persist(); this.flash('Audit removed from this browser.', 'info'); }); }
   };
   return A;
 }

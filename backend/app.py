@@ -8,6 +8,8 @@ Privacy rules this server keeps:
     job ends (completed, failed, cancelled or timed out).
   * Only the metrics (the sda-result record) are kept, in memory, for RESULT_TTL_S seconds so the
     dashboard can fetch them. They contain column names and statistics, no data rows.
+  * Saved audit records (the dashboard's past audits: metrics and column summaries, never data rows)
+    are stored under a private browser key, hashed before use, until the user deletes them.
   * No request bodies, data values or client IP addresses are logged.
 
 Endpoints
@@ -15,6 +17,10 @@ Endpoints
   POST   /api/jobs              upload and queue a job (multipart form)
   GET    /api/jobs/{id}         status, per-step progress, queue position, result when done
   DELETE /api/jobs/{id}         cancel a queued/running job, or forget a finished one
+  GET    /api/records           list the saved audit records of this browser key (header X-SDA-Key)
+  GET    /api/records/{id}      one saved record
+  PUT    /api/records/{id}      save or replace a record (JSON: {"meta": {...}, "record": {...}})
+  DELETE /api/records/{id}      delete one record; DELETE /api/records deletes all of them
 """
 from __future__ import annotations
 
@@ -24,6 +30,7 @@ import io
 import json
 import os
 import queue
+import re
 import shutil
 import subprocess
 import sys
@@ -33,7 +40,7 @@ import time
 import uuid
 from collections import deque
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -57,10 +64,19 @@ RESULT_TTL_S = env_int("RESULT_TTL_S", 3600)
 ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "*").split(",") if o.strip()]
 JOBS_DIR = os.environ.get("JOBS_DIR") or os.path.join(tempfile.gettempdir(), "sda-jobs")
 os.makedirs(JOBS_DIR, exist_ok=True)
+RECORDS_DIR = os.environ.get("RECORDS_DIR") or os.path.join(tempfile.gettempdir(), "sda-records")
+RECORDS_PERSISTENT = bool(os.environ.get("RECORDS_DIR"))   # set to a mounted volume in production
+os.makedirs(RECORDS_DIR, exist_ok=True)
+RECORD_MAX_KB = env_int("RECORD_MAX_KB", 2048)
+RECORDS_PER_KEY = env_int("RECORDS_PER_KEY", 300)
+RECORD_WRITES_PER_HOUR = env_int("RECORD_WRITES_PER_HOUR", 300)
+EVAL_STEPS = ["fidelity", "utility", "mia_distance", "exact_match", "mia_shadow", "singling_out", "linkability",
+              "attribute_inference"]
+ON_RECORDS_CHANGED = None   # hook: modal_app.py sets this to commit the storage volume
 
 app = FastAPI(title="Synthetic Data Auditor API", version="1.0",
               description="Full six-attack audits for the Synthetic Data Auditor dashboard.")
-app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_methods=["GET", "POST", "DELETE"],
+app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_methods=["GET", "POST", "PUT", "DELETE"],
                    allow_headers=["*"], max_age=600)
 
 JOBS: dict[str, dict] = {}
@@ -75,12 +91,12 @@ def client_key(request: Request) -> str:
     return hashlib.sha256(("sda-rate-" + ip).encode()).hexdigest()[:16]
 
 
-def rate_limited(key: str) -> bool:
+def rate_limited(key: str, limit: int | None = None) -> bool:
     now = time.time()
     d = HITS.setdefault(key, deque())
     while d and now - d[0] > 3600:
         d.popleft()
-    if len(d) >= JOBS_PER_HOUR:
+    if len(d) >= (limit or JOBS_PER_HOUR):
         return True
     d.append(now)
     return False
@@ -244,7 +260,10 @@ def health():
                        "result_kept_minutes": RESULT_TTL_S // 60},
             "generators": {"gc": "SDV GaussianCopula", "pcc": "Project copula (per class)"},
             "data_policy": "Uploaded files are deleted when the job ends; only metrics are kept, in memory, for "
-                           f"{RESULT_TTL_S // 60} minutes.",
+                           f"{RESULT_TTL_S // 60} minutes. Saved audits (metrics and column summaries, no data rows) "
+                           "are kept in a private list per browser until deleted.",
+            "records": {"enabled": True, "persistent": RECORDS_PERSISTENT, "max_kb": RECORD_MAX_KB,
+                        "max_records": RECORDS_PER_KEY},
             "versions": versions()}
 
 
@@ -252,7 +271,7 @@ def health():
 async def create_job(request: Request,
                      mode: str = Form(...), target: str = Form(...), task: str = Form(...),
                      generator: str = Form("gc"), name: str = Form(""), sensitive_columns: str = Form(""),
-                     membership_column: str = Form(""),
+                     membership_column: str = Form(""), steps: str = Form(""),
                      real: UploadFile = File(...), synthetic: UploadFile | None = File(None),
                      holdout: UploadFile | None = File(None)):
     if mode not in ("generate", "audit"):
@@ -263,6 +282,9 @@ async def create_job(request: Request,
         raise HTTPException(400, "generator must be 'gc' (SDV GaussianCopula) or 'pcc' (project copula)")
     if mode == "audit" and synthetic is None:
         raise HTTPException(400, "Audit mode needs the synthetic file")
+    want = [s.strip() for s in steps.split(",") if s.strip()]
+    if [s for s in want if s not in EVAL_STEPS]:
+        raise HTTPException(400, "steps must be a comma-separated subset of: " + ", ".join(EVAL_STEPS))
     if len(queued_ids()) >= MAX_QUEUE:
         raise HTTPException(503, "The server queue is full. Please try again in a few minutes.")
     if rate_limited(client_key(request)):
@@ -299,7 +321,7 @@ async def create_job(request: Request,
             raise HTTPException(400, "Sensitive column(s) not in the real file: " + ", ".join(bad))
         job = {"mode": mode, "target": target, "task": task, "generator": generator if mode == "generate" else None,
                "name": name.strip()[:80] or "Uploaded dataset", "sensitive_columns": sens,
-               "membership_column": mcol or None, "max_rows": MAX_ROWS}
+               "membership_column": mcol or None, "max_rows": MAX_ROWS, "steps": want or None}
         with open(os.path.join(jd, "job.json"), "w") as f:
             json.dump(job, f)
     except Exception:
@@ -338,3 +360,103 @@ def delete_job(job_id: str):
 @app.get("/")
 def index():
     return JSONResponse({"service": "Synthetic Data Auditor API", "docs": "/docs", "health": "/api/health"})
+
+
+# ───────────────────────── saved audit records (past audits) ─────────────────────────
+KEY_RE = re.compile(r"^[A-Za-z0-9_-]{24,128}$")
+ID_RE = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
+REC_LOCK = threading.Lock()
+
+
+def owner_dir(key: str | None) -> str:
+    """The folder for one browser key. The key itself is never stored, only a hash of it."""
+    if not key or not KEY_RE.match(key):
+        raise HTTPException(401, "Missing or invalid X-SDA-Key header")
+    d = os.path.join(RECORDS_DIR, hashlib.sha256(("sda-records-" + key).encode()).hexdigest()[:40])
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def record_path(d: str, rec_id: str) -> str:
+    if not ID_RE.match(rec_id or "") or rec_id.startswith("."):
+        raise HTTPException(400, "Invalid record id")
+    return os.path.join(d, rec_id + ".json")
+
+
+def records_changed():
+    if ON_RECORDS_CHANGED:
+        try:
+            ON_RECORDS_CHANGED()
+        except Exception:
+            pass
+
+
+@app.get("/api/records")
+def list_records(x_sda_key: str | None = Header(None)):
+    d = owner_dir(x_sda_key)
+    out = []
+    for name in os.listdir(d):
+        if name.endswith(".json"):
+            doc = read_json(os.path.join(d, name))
+            if doc:
+                out.append({"id": doc.get("id"), "saved_at": doc.get("saved_at"), "meta": doc.get("meta") or {}})
+    out.sort(key=lambda r: r.get("saved_at") or 0, reverse=True)
+    return {"records": out, "max_records": RECORDS_PER_KEY, "persistent": RECORDS_PERSISTENT}
+
+
+@app.get("/api/records/{rec_id}")
+def get_record(rec_id: str, x_sda_key: str | None = Header(None)):
+    doc = read_json(record_path(owner_dir(x_sda_key), rec_id))
+    if doc is None:
+        raise HTTPException(404, "No saved record with this id")
+    return doc
+
+
+@app.put("/api/records/{rec_id}")
+async def put_record(rec_id: str, request: Request, x_sda_key: str | None = Header(None)):
+    d = owner_dir(x_sda_key)
+    p = record_path(d, rec_id)
+    raw = await request.body()
+    if len(raw) > RECORD_MAX_KB * 1024:
+        raise HTTPException(413, f"The record is larger than {RECORD_MAX_KB} KB")
+    try:
+        body = json.loads(raw)
+    except ValueError:
+        raise HTTPException(400, "The body must be JSON")
+    if not isinstance(body, dict) or not isinstance(body.get("record"), dict):
+        raise HTTPException(400, 'The body must be {"meta": {...}, "record": {...}}')
+    if rate_limited("rec-" + hashlib.sha256(x_sda_key.encode()).hexdigest()[:16], RECORD_WRITES_PER_HOUR):
+        raise HTTPException(429, "Too many saves this hour. Please try again later.")
+    with REC_LOCK:
+        if not os.path.exists(p) and len([n for n in os.listdir(d) if n.endswith(".json")]) >= RECORDS_PER_KEY:
+            raise HTTPException(409, f"This list already holds {RECORDS_PER_KEY} audits. Delete some to save more.")
+        meta = body.get("meta") if isinstance(body.get("meta"), dict) else {}
+        doc = {"id": rec_id, "saved_at": time.time(), "meta": meta, "record": body["record"]}
+        tmp = p + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(doc, f)
+        os.replace(tmp, p)
+    records_changed()
+    return {"id": rec_id, "saved_at": doc["saved_at"]}
+
+
+@app.delete("/api/records/{rec_id}")
+def delete_record(rec_id: str, x_sda_key: str | None = Header(None)):
+    p = record_path(owner_dir(x_sda_key), rec_id)
+    if not os.path.exists(p):
+        raise HTTPException(404, "No saved record with this id")
+    os.remove(p)
+    records_changed()
+    return {"id": rec_id, "status": "deleted"}
+
+
+@app.delete("/api/records")
+def delete_all_records(x_sda_key: str | None = Header(None)):
+    d = owner_dir(x_sda_key)
+    n = 0
+    for name in os.listdir(d):
+        if name.endswith(".json"):
+            os.remove(os.path.join(d, name))
+            n += 1
+    records_changed()
+    return {"deleted": n}

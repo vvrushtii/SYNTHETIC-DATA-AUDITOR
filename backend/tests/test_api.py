@@ -12,6 +12,7 @@ import pytest
 
 os.environ.setdefault("JOBS_PER_HOUR", "1000")
 os.environ.setdefault("JOBS_DIR", os.path.join(os.path.dirname(__file__), "_jobs"))
+os.environ.setdefault("RECORDS_DIR", os.path.join(os.path.dirname(__file__), "_records"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -151,3 +152,40 @@ def test_cancel(files):
     assert j["status"] == "cancelled" and j["data_deleted"]
     client.delete(f"/api/jobs/{ids[0]}")
     assert wait(ids[0])["status"] in ("cancelled", "completed")
+
+
+def test_steps_subset(files):
+    """Only the requested evaluation steps run; the rest are reported as not run."""
+    r = post({"mode": "audit", "target": "label", "task": "classification", "membership_column": "member",
+              "steps": "singling_out,linkability"}, {"real": files["marked"], "synthetic": files["fresh"]})
+    assert r.status_code == 202, r.text
+    j = wait(r.json()["id"])
+    assert j["status"] == "completed", j.get("error")
+    st = steps(j["result"])
+    assert st["singling_out"] == "completed" and st["linkability"] == "completed"
+    assert st["fidelity"] == "not_run" and st["mia_shadow"] == "not_run"
+    assert post({"mode": "audit", "target": "label", "task": "classification", "steps": "bogus"},
+                {"real": files["train"], "synthetic": files["fresh"]}).status_code == 400
+
+
+def test_records():
+    key, other = "k" * 32, "z" * 32
+    h = {"X-SDA-Key": key}
+    assert client.get("/api/records").status_code == 401
+    assert client.get("/api/records", headers={"X-SDA-Key": "short"}).status_code == 401
+    rec = {"meta": {"name": "Toy", "kind": "audit"}, "record": {"id": "a1", "fidelity": {"overall": 0.9}}}
+    assert client.put("/api/records/a1", json=rec, headers=h).status_code == 200
+    assert client.put("/api/records/..%2Fx", json=rec, headers=h).status_code in (400, 404)
+    assert client.put("/api/records/a2", content=b"not json", headers=h).status_code == 400
+    lst = client.get("/api/records", headers=h).json()["records"]
+    assert [r["id"] for r in lst] == ["a1"] and lst[0]["meta"]["name"] == "Toy"
+    assert client.get("/api/records/a1", headers=h).json()["record"]["fidelity"]["overall"] == 0.9
+    assert client.get("/api/records", headers={"X-SDA-Key": other}).json()["records"] == []   # private per key
+    assert client.get("/api/records/a1", headers={"X-SDA-Key": other}).status_code == 404
+    assert client.delete("/api/records/a1", headers=h).json()["status"] == "deleted"
+    assert client.get("/api/records", headers=h).json()["records"] == []
+    client.put("/api/records/b1", json=rec, headers=h)
+    client.put("/api/records/b2", json=rec, headers=h)
+    assert client.delete("/api/records", headers=h).json()["deleted"] == 2
+    files_on_disk = " ".join(os.listdir(api.RECORDS_DIR))
+    assert key not in files_on_disk                                      # only a hash of the key is stored

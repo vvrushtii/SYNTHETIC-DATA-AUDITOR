@@ -191,7 +191,12 @@ def run(job_dir):
                   notes=["Synthetic data was uploaded, not generated on the server."] + notes)
         prog.set("prepare", "completed", round(time.time() - t, 2))
 
+    want = set(job.get("steps") or P.EVAL_STEPS)
     for step in P.EVAL_STEPS:
+        if step not in want:
+            save_part(root, cfg, gen, step, "not_run", notes=["Not requested for this job."])
+            prog.set(step, "not_run")
+            continue
         if len(holdout) == 0 and step != "fidelity":
             save_part(root, cfg, gen, step, "not_run", notes=[NO_HOLDOUT])
             prog.set(step, "not_run")

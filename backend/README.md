@@ -18,6 +18,7 @@ Without holdout rows, the attacks and the utility test are reported as **not run
 - Uploads are written only to the job's temporary folder (`/tmp/sda-jobs/<job id>`), which is **deleted when the job ends**: finished, failed, cancelled or timed out. A cleanup loop also removes leftovers after a restart.
 - Each job runs in its own process, so it can be stopped, and its memory is freed afterwards.
 - Only the result (metrics, column names, cleaning log; no data rows) is kept, **in memory, for 60 minutes**, so the dashboard can fetch it. A restart forgets it.
+- **Past audits**: the dashboard saves each finished audit record (metrics, column summaries, settings; never data rows) through `/api/records`, under a random private key created in the visitor's browser. The server stores only a hash of that key, in `RECORDS_DIR` (on Modal: the volume `sda-records`). Records stay until the visitor deletes them; anyone with the key can read them, so the dashboard tells users to keep it private.
 - No request bodies, data values or IP addresses are logged (the access log is off). The rate limit keeps a hash of the client address in memory only.
 
 ## API
@@ -28,6 +29,11 @@ Without holdout rows, the attacks and the utility test are reported as **not run
 | `POST` | `/api/jobs` | multipart form: `mode`, `target`, `task` (`classification` or `regression`), `generator` (`gc` or `pcc`, generate mode), `name`, `sensitive_columns` (comma-separated), `membership_column`, files `real`, `synthetic`, `holdout`. Returns `202` with the job. |
 | `GET` | `/api/jobs/{id}` | status (`queued`, `running`, `completed`, `failed`, `cancelled`), per-step progress, queue position, and the `sda-result/1.0` record when completed |
 | `DELETE` | `/api/jobs/{id}` | cancel a queued or running job, or forget a finished one |
+| `GET` | `/api/records` | list the saved past audits for the key in the `X-SDA-Key` header |
+| `GET` / `PUT` / `DELETE` | `/api/records/{id}` | read, save (JSON `{"meta": {...}, "record": {...}}`) or delete one saved audit |
+| `DELETE` | `/api/records` | delete all saved audits for the key |
+
+`POST /api/jobs` also takes `steps` (comma-separated, e.g. `mia_shadow,singling_out,linkability,attribute_inference`) to run only those evaluation steps. The dashboard uses this after each New Audit: the browser runs fidelity, utility, distance MIA and exact match, and the server adds the other four attacks on the same rows and the same member / non-member split.
 
 Interactive documentation: `/docs` on the running server.
 
@@ -43,6 +49,9 @@ Interactive documentation: `/docs` on the running server.
 | `MAX_QUEUE` | `10` | Jobs waiting at once |
 | `JOB_TIMEOUT_S` | `1800` | A job is stopped after this many seconds |
 | `RESULT_TTL_S` | `3600` | How long a finished result stays available |
+| `RECORDS_DIR` | temp folder | Where saved past audits are kept (set to a persistent volume) |
+| `RECORD_MAX_KB` | `2048` | Largest saved audit record |
+| `RECORDS_PER_KEY` | `300` | Saved audits per browser key |
 
 ## Deploy on Modal (free monthly credit)
 

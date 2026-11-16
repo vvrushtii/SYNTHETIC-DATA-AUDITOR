@@ -20,20 +20,24 @@ const ICON = { Pass: 'check', Completed: 'check', Ready: 'play', Running: 'refre
 const bd = (label, toneOverride, icon) => ({ label, tone: toneOverride || TONE[label] || 'grey', icon: icon || ICON[label] || 'dash' });
 SDA.bd = bd;
 
+/* The 41-dataset study (Benchmark page, historical baselines) is for the project team only: open the site with ?team */
+const TEAM = (() => { try { return /[?&#]team\b/.test(String(location.search) + String(location.hash)); } catch (e) { return false; } })();
+SDA.team = TEAM;
 const PAGES = [
-  { id: 'overview', group: 'Workspace', label: 'Overview', icon: 'grid', title: 'Synthetic Data Quality, Privacy & Compliance Auditor', desc: 'Evaluate synthetic data quality, downstream utility, empirical privacy risks, and governance considerations in one reproducible workflow.' },
-  { id: 'new', group: 'Workspace', label: 'New Audit', icon: 'upload', title: 'New Audit', desc: 'Upload a real and a synthetic CSV, review the data, choose the tests and run the audit.' },
-  { id: 'server', group: 'Workspace', label: 'Full audit (server)', icon: 'bolt', title: 'Full audit on the server', desc: 'All six privacy attacks, with fidelity and utility, run by the Python pipeline on the auditor server. The server can also generate the synthetic data for you.' },
-  { id: 'clean', group: 'Workspace', label: 'Data Cleaning', icon: 'wand', title: 'Data Cleaning', desc: 'Prepare a cleaned copy of your data. Every step is previewed, logged and reversible; the uploaded files never change.' },
-  { id: 'validation', group: 'Evaluate', label: 'Data Validation', icon: 'shield', title: 'Data Validation', desc: 'Can this pair be evaluated consistently? Schema, types, missing values, duplicates and target checks.' },
-  { id: 'fidelity', group: 'Evaluate', label: 'Fidelity', icon: 'sliders', title: 'Fidelity', desc: 'How closely does the synthetic data reproduce the real data’s statistical structure?' },
-  { id: 'utility', group: 'Evaluate', label: 'Utility', icon: 'target', title: 'Utility', desc: 'Do models trained on synthetic data still work on real data? TRTR versus TSTR.' },
-  { id: 'privacy', group: 'Evaluate', label: 'Privacy Tests', icon: 'lock', title: 'Privacy Tests', desc: 'Empirical attack evidence, setup and caveats — one record per attack.' },
-  { id: 'ensemble', group: 'Evaluate', label: 'Ensemble Risk', icon: 'layers', title: 'Ensemble Risk', desc: 'A transparent interpretation of the available privacy evidence — not a legal verdict.' },
-  { id: 'governance', group: 'Govern', label: 'Governance & Compliance', icon: 'scale', title: 'Governance & Compliance', desc: 'Evidence-to-rule mapping backed by a versioned Compliance Knowledge Base, with human review.' },
-  { id: 'bench', group: 'Outputs', label: 'Benchmark', icon: 'bench', title: 'Six-attack benchmark', desc: 'All six privacy attacks, with fidelity and utility, on 41 public datasets. Computed offline by the Python pipeline; each attack is read on its own and nothing is combined into one score.' },
-  { id: 'compare', group: 'Outputs', label: 'Dataset Comparison', icon: 'columns', title: 'Dataset Comparison', desc: 'Compare audits on shared scales; unavailable values are never treated as zero.' },
-  { id: 'reports', group: 'Outputs', label: 'Reports & Exports', icon: 'file', title: 'Reports & Exports', desc: 'Generate the audit report and machine-readable exports from the stored results.' }
+  { id: 'overview', group: 'Workspace', label: 'Overview', icon: 'grid', title: 'Overview', desc: 'Your latest audit at a glance.' },
+  { id: 'new', group: 'Workspace', label: 'New Audit', icon: 'upload', title: 'New audit', desc: 'Check synthetic data against real data.' },
+  { id: 'server', group: 'Workspace', label: 'Generate & Audit', icon: 'bolt', title: 'Generate & audit', desc: 'Create synthetic data, then audit it.' },
+  { id: 'history', group: 'Workspace', label: 'Past Audits', icon: 'archive', title: 'Past audits', desc: 'Every audit you have run.' },
+  { id: 'clean', group: 'Workspace', label: 'Data Cleaning', icon: 'wand', title: 'Data cleaning', desc: 'Fix data issues before auditing.' },
+  { id: 'validation', group: 'Evaluate', label: 'Data Validation', icon: 'shield', title: 'Data validation', desc: 'Can these files be compared?' },
+  { id: 'fidelity', group: 'Evaluate', label: 'Fidelity', icon: 'sliders', title: 'Fidelity', desc: 'How similar is the synthetic data?' },
+  { id: 'utility', group: 'Evaluate', label: 'Utility', icon: 'target', title: 'Utility', desc: 'Does it train useful models?' },
+  { id: 'privacy', group: 'Evaluate', label: 'Privacy Tests', icon: 'lock', title: 'Privacy tests', desc: 'Could real people be exposed?' },
+  { id: 'ensemble', group: 'Evaluate', label: 'Overall Risk', icon: 'layers', title: 'Overall privacy risk', desc: 'All privacy tests, one summary.' },
+  { id: 'governance', group: 'Govern', label: 'Laws & Standards', icon: 'scale', title: 'Laws & standards', desc: 'Which privacy laws may apply.' },
+  { id: 'bench', group: 'Outputs', label: 'Benchmark', icon: 'bench', title: TEAM ? 'Six-attack benchmark' : 'Generated audit', desc: TEAM ? 'Team view: the 41-dataset study.' : 'Results from Generate & audit.', hidden: !TEAM },
+  { id: 'compare', group: 'Outputs', label: 'Compare Audits', icon: 'columns', title: 'Compare audits', desc: 'Your audits side by side.' },
+  { id: 'reports', group: 'Outputs', label: 'Reports & Exports', icon: 'file', title: 'Reports & exports', desc: 'Download the audit report.' }
 ];
 SDA.pages = PAGES;
 
@@ -77,18 +81,19 @@ function build(S, A) {
   const gov = cur ? SDA.kb.buildGovernance(cur, S.kbState) : null;
   const vm = { act: A, cur: cur ? { id: cur.id, name: cur.name } : null, flash: S.flash, busy: !!S.busy };
   vm.pg = {}; PAGES.forEach(p => vm.pg[p.id] = S.page === p.id);
-  const meta = PAGES.find(p => p.id === S.page);
+  const meta = PAGES.find(p => p.id === S.page) || PAGES[0];
   vm.nav = PAGES.map(p => { let dot = null; if (cur) { const r = cur.results; const st = { validation: r.validation && r.validation.status, fidelity: r.fidelity && r.fidelity.status, utility: r.utility && r.utility.status, privacy: r.privacy && r.privacy.status, ensemble: r.ensemble && r.ensemble.category }[p.id]; if (st) dot = bd(st === 'Pass' ? 'Pass' : st); } return { id: p.id, label: p.label, icon: p.icon, cls: 'nav-item' + (S.page === p.id ? ' on' : ''), go: A.go(p.id), cur: S.page === p.id ? 'page' : 'false', dot: dot ? dot.tone : '', hasDot: !!dot, dotLabel: dot ? dot.label : '' }; });
-  vm.navGroups = ['Workspace', 'Evaluate', 'Govern', 'Outputs'].map(gl => ({ label: gl, items: vm.nav.filter(n => PAGES.find(p => p.id === n.id).group === gl) }));
+  vm.navGroups = ['Workspace', 'Evaluate', 'Govern', 'Outputs'].map(gl => ({ label: gl, items: vm.nav.filter(n => { const p = PAGES.find(x => x.id === n.id); return p.group === gl && !p.hidden; }) }));
   vm.hasAudits = S.audits.length > 0;
+  vm.foot = S.sv && S.sv.health ? { tone: 'green', text: 'Auditor server online' } : S.sv && S.sv.checking ? { tone: 'amber', text: 'Connecting to the server…' } : { tone: 'grey', text: 'Server offline · browser tests only' };
   // header
-  const head = { title: meta.title, desc: meta.desc, crumb: meta.label, eyebrow: meta.id === 'overview' ? 'Synthetic Data Auditor · Workspace' : meta.group, hasAudits: S.audits.length > 0, noAudits: S.audits.length === 0, currentId: S.currentId || '', auditOptions: [{ id: '', label: S.audits.length ? 'All pairs · none selected' : 'No audit selected' }].concat(S.audits.map(a => ({ id: a.id, label: a.name + ' · ' + a.id + (a.source === 'demo' ? ' (demo)' : '') }))), status: null, kind: null, actions: [], line: { has: false, label: '', tone: 'grey', text: '' } };
+  const head = { title: meta.title, desc: meta.desc, crumb: meta.label, eyebrow: meta.group, hasAudits: S.audits.length > 0, noAudits: S.audits.length === 0, currentId: S.currentId || '', auditOptions: [{ id: '', label: S.audits.length ? 'All pairs · none selected' : 'No audit selected' }].concat(S.audits.map(a => ({ id: a.id, label: a.name + ' · ' + a.id + (a.source === 'demo' ? ' (demo)' : '') }))), status: null, kind: null, actions: [], line: { has: false, label: '', tone: 'grey', text: '' } };
   if (S.busy === 'run') head.status = bd('Running'); else if (S.page === 'new' && !cur) head.status = S.draft.validated ? (S.draft.validation.canRun ? bd('Ready') : bd('Blocked')) : bd('Draft', 'violet', 'edit'); else if (S.page === 'server') head.status = svStatus(S.sv); else if (cur && S.page !== 'bench') head.status = bd(cur.status === 'Ready' ? 'Ready' : cur.status);
   if (cur && S.page !== 'new' && S.page !== 'bench' && S.page !== 'server') head.kind = kindOf(cur);
   const act = (label, kind, icon, onClick, o) => Object.assign({ label, cls: 'btn ' + (kind === 'primary' ? 'btn-primary' : 'btn-ghost'), icon, onClick, disabled: false, title: '' }, o || {});
   const resultPage = ['validation', 'fidelity', 'utility', 'privacy', 'ensemble', 'governance'].indexOf(S.page) >= 0;
   if (S.page === 'overview') {
-    const ra = cur; // only an audit picked during this visit is featured; a fresh visit lists every stored pair
+    const ra = cur || latestOf(S);
     if (ra) {
       const gen = ra.info && ra.info.generator ? String(ra.info.generator).trim() : '';
       head.title = ra.name + (gen && ra.name.toLowerCase().indexOf(gen.toLowerCase().split(' (')[0].split(' +')[0]) < 0 ? ', synthesised with ' + gen : '');
@@ -109,12 +114,13 @@ function build(S, A) {
   else if (resultPage) { head.actions.push(act('Run Evaluation', 'ghost', 'play', A.rerun, { disabled: !cur || S.busy === 'run', title: cur ? (A.hasRaw(cur.id) ? 'Re-run the selected modules on the data still held in this tab' : 'Raw data is not kept after a reload — this opens New Audit so you can re-upload') : 'Select an audit first' })); head.actions.push(act('Export Report', 'primary', 'download', A.go('reports'), { disabled: !cur })); }
   else if (S.page === 'compare') head.actions.push(act('New Audit', 'primary', 'plus', A.newAudit));
   else if (S.page === 'server') head.actions.push(act('Check server', 'ghost', 'refresh', A.svCheck, { disabled: !S.sv.url || S.sv.checking }));
-  else if (S.page === 'bench') head.actions.push(act('Download table (CSV)', 'ghost', 'download', A.bnCsv, { title: 'Metrics only: one row per dataset, every attack with its interval' }));
+  else if (S.page === 'history') head.actions.push(act('New audit', 'primary', 'plus', A.newAudit));
+  else if (S.page === 'bench' && TEAM) head.actions.push(act('Download table (CSV)', 'ghost', 'download', A.bnCsv, { title: 'Metrics only: one row per dataset, every attack with its interval' }));
   else if (S.page === 'reports') head.actions.push(act('Download PDF', 'primary', 'download', A.exportPdf, { disabled: !cur }));
   head.receipt = cur && (resultPage || S.page === 'reports') ? receipt(cur) : { has: false, items: [] };
   vm.head = head;
   if (S.page === 'overview') vm.ov = ovVM(S, A, cur, gov);
-  if (vm.ov) {
+  if (vm.ov && TEAM) {
     const all = SDA.benchAll(S); const per = id => { const done = all.filter(r => { const a = r.attacks.find(x => x.id === id); return a && a.status === 'Completed'; }); return { id, done: done.length, det: done.filter(r => r.attacks.find(x => x.id === id).above).length }; };
     const P = BN_ATTACKS.map(d => Object.assign(per(d.id), { short: d.short })); const top = P.slice().sort((p, q) => q.det - p.det)[0]; const dc = P.find(p => p.id === 'dcr'), sh = P.find(p => p.id === 'shadow');
     vm.ov.bn = all.length ? { has: true, go: A.go('bench'), text: all.length + ' public datasets with all six privacy attacks, computed offline by the Python pipeline. Most often above chance: ' + top.short.toLowerCase() + ' (' + top.det + ' of ' + top.done + '). Membership attacks are above chance on ' + dc.det + ' of ' + dc.done + ' (distance) and ' + sh.det + ' of ' + sh.done + ' (shadow model).' } : { has: false };
@@ -129,10 +135,30 @@ function build(S, A) {
   if (S.page === 'governance') vm.gv = gvVM(S, A, cur, gov);
   if (S.page === 'compare') vm.cm = cmVM(S, A);
   if (S.page === 'bench') vm.bn = bnVM(S, A);
+  if (S.page === 'history') vm.past = pastVM(S, A);
   if (S.page === 'server') vm.sv = svVM(S, A);
   if (S.page === 'reports') { vm.rp = rpVM(S, A, cur, gov); const t = S.ui.rpTab || 'report'; vm.rpTabs = [['report', 'Report'], ['registry', 'Results registry'], ['history', 'History']].map(x => ({ label: x[1], cls: 'tab' + (t === x[0] ? ' on' : ''), go: A.setUi('rpTab', x[0]) })); vm.rpT = { report: t === 'report', registry: t === 'registry', history: t === 'history' }; }
-  vm.empty = { title: 'No audit selected', text: 'Results appear here after you run an audit. Upload a real and a synthetic CSV, or load the clearly labelled demo pair to try the full workflow.', newAudit: A.newAudit, demo: A.loadDemoClean, goBench: A.go('bench') };
+  vm.empty = { title: 'No audit selected', text: 'Results appear here after you run an audit. Upload a real and a synthetic CSV, or load the clearly labelled demo pair to try the full workflow.', newAudit: A.newAudit, demo: A.loadDemoClean, goPast: A.go('history') };
+  if (vm.ov && !vm.ov.bn) vm.ov.bn = { has: false };
   return vm;
+}
+
+/* ───────── Past audits ───────── */
+function pastVM(S, A) {
+  const q = String(S.pastQ || '').toLowerCase().trim(); const online = !!(S.sv && S.sv.health);
+  const savedTxt = id => S.saved[id] === true ? bd('Saved', 'green', 'check') : S.saved[id] === false ? bd('Not saved', 'amber', 'alert') : online ? bd('Saving', 'blue', 'refresh') : bd('This browser only', 'grey', 'dash');
+  const aud = S.audits.map(a => {
+    const P = a.results.privacy || {}, E = a.results.ensemble || {}, SV = P.server || {};
+    const done = (P.attacks || []).filter(x => x.status === 'Completed').length, running = ['queued', 'running', 'uploading'].indexOf(SV.status) >= 0;
+    const risk = E.category ? bd(E.category === 'Inconclusive' ? 'Inconclusive' : E.category + ' concern', E.tone, E.tone === 'red' ? 'x' : E.tone === 'amber' ? 'alert' : E.tone === 'green' ? 'check' : 'dash') : bd('Not run', 'grey', 'dash');
+    return { t: a.createdAt || '', name: a.name, type: a.source === 'demo' ? 'Demo audit' : 'Audit', date: when(a.createdAt), privacy: P.attacks && P.attacks.length ? done + ' of 6' + (running ? ' · rest running' : '') : 'Not run', risk, saved: savedTxt(a.id), open: A.pastOpen(a.id), del: A.pastDelete(a.id) };
+  });
+  const gen = (S.benchImported || []).map(r => { const iso = r.savedAt ? new Date(r.savedAt * 1000).toISOString() : '';
+    return { t: iso, name: r.name, type: 'Generated & audited', date: iso ? when(iso) : '—', privacy: r.completed + ' of 6', risk: r.detected ? bd(r.detected + ' above chance', 'amber', 'alert') : bd('None above chance', 'grey', 'dash'), saved: r.recId ? savedTxt(r.recId) : bd('This browser only', 'grey', 'dash'), open: A.bnOpenPage(r.key), del: A.bnRemove(r.key) }; });
+  const rows = aud.concat(gen).filter(r => !q || r.name.toLowerCase().indexOf(q) >= 0).sort((p, r) => String(r.t).localeCompare(String(p.t)));
+  return { rows, has: rows.length > 0, total: aud.length + gen.length, none: aud.length + gen.length === 0, q: S.pastQ || '', online, loading: !!S.recLoading, err: S.recError || '', hasErr: !!S.recError, sync: A.recSync,
+    keyMask: A.keyMask(), copyKey: A.copyKey, keyDraft: S.keyDraft || '', useKey: A.useKey, newAudit: A.newAudit,
+    clr: { ask: !!S.confirmClearAll, start: A.askClearAll, cancel: A.cancelClearAll, confirm: A.clearAll } };
 }
 
 /* ───────── Overview ───────── */
@@ -153,7 +179,7 @@ function ovVM(S, A, cur, gov) {
     { icon: 'scale', label: 'Governance findings to review', value: String(pending), sub: mapped ? pending + ' of ' + mapped + ' mappings still pending human review' : 'No mappings yet — select frameworks in governance context.', status: pending ? bd('Needs Human Review') : bd(mapped ? 'Completed' : 'Not Run'), statusText: pending ? 'Review' : mapped ? 'Reviewed' : 'None' }
   ];
   // charts
-  const base = SDA.baseline.rows;
+  const base = TEAM ? SDA.baseline.rows : [];
   const rowsFid = base.map(r => bar(r.name, 'Historical baseline', r.overall, 0, 1, fmt(r.overall), 'hist', r.name + ' — historical baseline, Overall Quality ' + fmt(r.overall))).concat(fidA.map(a => bar(a.name, a.source === 'demo' ? 'Demo audit' : 'Current audit', a.results.fidelity.overall, 0, 1, fmt(a.results.fidelity.overall), a.source === 'demo' ? 'demo' : 'cur')));
   const rowsUtil = base.map(r => bar(r.name, 'Historical baseline', r.retention, 0, 120, fmtPct(r.retention), 'hist')).concat(utilA.map(a => bar(a.name, (a.source === 'demo' ? 'Demo audit' : 'Current audit') + ' · ' + SDA.metricMeta[a.results.utility.primary].label, a.results.utility.headline.retention, 0, 120, fmtPct(a.results.utility.headline.retention), a.source === 'demo' ? 'demo' : 'cur')));
   const rowsPriv = base.map(r => bar(r.name, 'Historical baseline', r.mia, 0.4, 1, r.mia === null ? 'N/A' : fmt(r.mia), 'hist', r.mia === null ? r.name + ' — MIA pending verification' : '')).concat(privA.map(a => { const m = a.results.privacy.attacks.find(x => x.id === 'mia' && x.status === 'Completed'); return bar(a.name, a.source === 'demo' ? 'Demo audit' : 'Current audit', m ? m.metrics.auc : null, 0.4, 1, m ? fmt(m.metrics.auc) : '', a.source === 'demo' ? 'demo' : 'cur'); }));
@@ -175,7 +201,7 @@ function ovVM(S, A, cur, gov) {
     if (r.utility && r.utility.status === 'Completed') findings.push({ tag, tone: r.utility.headline.retention >= 90 ? 'green' : r.utility.headline.retention >= 75 ? 'amber' : 'red', title: 'Utility retention ' + fmtPct(r.utility.headline.retention), text: SDA.metricMeta[r.utility.primary].label + ': TRTR ' + fmt(r.utility.headline.trtr) + ' vs TSTR ' + fmt(r.utility.headline.tstr) + ' (' + r.utility.task + ', target “' + r.utility.target + '”).', evidence: 'Utility › TRTR vs TSTR table', go: A.openPage(src.id, 'utility') });
     if (r.ensemble && r.ensemble.category) findings.push({ tag, tone: r.ensemble.tone, title: r.ensemble.label, text: r.ensemble.rationale[0] || '', evidence: 'Ensemble Risk › component evidence', go: A.openPage(src.id, 'ensemble') });
     const G = SDA.kb.buildGovernance(src, S.kbState); if (G.mappings.length || G.gaps.length) findings.push({ tag, tone: 'amber', title: G.mappings.length + ' governance review prompts · ' + G.gaps.length + ' evidence gaps', text: G.mappings.filter(m => m.ruleVerification !== 'Project-reviewed').length + ' rest on unverified draft rules. Not a compliance verdict.', evidence: 'Governance › Mappings & gaps', go: A.openPage(src.id, 'governance') });
-  } else {
+  } else if (base.length) {
     const lo = base.slice().sort((a, b) => a.retention - b.retention)[0], hi = base.slice().sort((a, b) => b.retention - a.retention)[0];
     const th = histBd;
     findings.push({ tag: th, tone: 'amber', title: 'Lowest utility retention: ' + lo.name + ' (' + lo.retention + '%)', text: 'Highest was ' + hi.name + ' (' + hi.retention + '%). Retention depends on task and model — compare like with like.', evidence: 'Compare Datasets › historical baseline', go: A.go('compare') });
@@ -203,7 +229,7 @@ function ovVM(S, A, cur, gov) {
   const selA = S.audits.find(a => a.id === selId) || null;
   const bench = { rows: benchRows, table: benchTable, hasSel: !!selA && inc.includes(selA), selName: selA ? selA.name : '', selKind: selA ? kindOf(selA) : null };
   // the audit shown on the Overview: the selected one, else the most recent
-  const runA = cur;
+  const runA = cur || latest;
   const runG = runA ? (runA === cur ? gov : SDA.kb.buildGovernance(runA, S.kbState)) : null;
   const stand = runA ? standVM(runA, A) : [];
   const attn = runA ? attnVM(runA, runG, A) : [];
@@ -222,7 +248,8 @@ function ovVM(S, A, cur, gov) {
     const st = a.status === 'Completed' ? bd('Completed') : a.status === 'Partial' ? bd('Incomplete', 'amber', 'alert') : a.status === 'Failed' ? bd('Failed') : a.status === 'Blocked' ? bd('Blocked') : bd('Ready');
     return { name: a.name, sub: a.id + (a.source === 'demo' ? ' · demo data' : ''), gen: a.info && a.info.generator && String(a.info.generator).trim() ? String(a.info.generator).trim() : '—', st, note, date: when(a.createdAt), open: A.open(a.id), isSel: !!runA && a.id === runA.id };
   });
-  return { has: !!runA, noAudits: S.audits.length === 0, standSub: runA ? runA.name + (runA.source === 'demo' ? ' · demo data' : '') : '', clearSel: A.clearSelection, clr: { ask: !!S.confirmClearAll, start: A.askClearAll, cancel: A.cancelClearAll, confirm: A.clearAll }, recTitle: runA ? 'All dataset pairs' : 'Dataset pairs', pickNote: !runA && cnt.all > 0, stand, attn, hasAttn: attn.length > 0, cover, filters, rows, noRows: rows.length === 0, recSub: cnt.all + ' audit' + (cnt.all === 1 ? '' : 's') + ' · ' + cnt.done + ' completed · ' + cnt.incomplete + ' incomplete · ' + cnt.failed + ' failed · stored in this browser only', hasRecent: cnt.all > 0, bench, kpis, hasData: inc.length > 0, noDataText: S.audits.length ? 'Only demo audits exist. Switch on “Include demo audits” to count them in the KPIs.' : 'No current audit yet. Upload a real and a synthetic CSV to start, or load the clearly labelled demo pair.', rowsFid, rowsUtil, rowsPriv, cov, findings, includeDemo: S.includeDemo, toggleDemo: A.toggleDemo, hasDemo: S.audits.some(a => a.source === 'demo'), histBd, newAudit: A.newAudit, demo: A.loadDemoClean };
+  const nPast = S.audits.length + (S.benchImported || []).length;
+  return { pastLink: nPast > 0, pastText: nPast + ' saved audit' + (nPast === 1 ? '' : 's') + '. Open any of them again.', goPast: A.go('history'), has: !!runA, noAudits: S.audits.length === 0, standSub: runA ? runA.name + (runA.source === 'demo' ? ' · demo data' : '') : '', clearSel: A.clearSelection, clr: { ask: !!S.confirmClearAll, start: A.askClearAll, cancel: A.cancelClearAll, confirm: A.clearAll }, recTitle: runA ? 'All dataset pairs' : 'Dataset pairs', pickNote: !runA && cnt.all > 0, stand, attn, hasAttn: attn.length > 0, cover, filters, rows, noRows: rows.length === 0, recSub: cnt.all + ' audit' + (cnt.all === 1 ? '' : 's') + ' · ' + cnt.done + ' completed · ' + cnt.incomplete + ' incomplete · ' + cnt.failed + ' failed · saved', hasRecent: cnt.all > 0, bench, kpis, hasData: inc.length > 0, noDataText: S.audits.length ? 'Only demo audits exist. Switch on “Include demo audits” to count them in the KPIs.' : 'No current audit yet. Upload a real and a synthetic CSV to start, or load the clearly labelled demo pair.', rowsFid, rowsUtil, rowsPriv, cov, findings, includeDemo: S.includeDemo, toggleDemo: A.toggleDemo, hasDemo: S.audits.some(a => a.source === 'demo'), histBd, newAudit: A.newAudit, demo: A.loadDemoClean };
 }
 
 /* Overview builders: every value comes from the stored audit; nothing is invented. */
@@ -300,7 +327,8 @@ function coverVM(a, gov) {
   SDA.attackCatalogue.forEach(c => {
     const hit = pv && pv.attacks ? pv.attacks.find(x => x.id === c.id) : null;
     if (hit) out.push(row(names[c.id] || c.short, hit.status));
-    else out.push(row(names[c.id] || c.short, c.implemented ? C.skip : C.na, c.implemented ? 'Not run' : 'Not available in this version'));
+    else { const SV = a.results.privacy && a.results.privacy.server || {}; const busy = ['queued', 'running', 'uploading'].indexOf(SV.status) >= 0;
+      out.push(busy ? { name: names[c.id] || c.short, bd: bd('Running', 'blue', 'refresh'), text: 'Running on the server' } : row(names[c.id] || c.short, c.implemented ? C.skip : C.na, c.implemented ? 'Not run' : 'Not run yet')); }
   });
   const e = es('ensemble'), E = a.results.ensemble;
   out.push(e && e.status === C.done ? row('Ensemble risk', C.done, E && E.label ? E.label : 'Completed') : e && e.status === C.partial ? { name: 'Ensemble risk', bd: bd('Insufficient evidence', 'grey', 'dash'), text: 'Insufficient evidence' } : row('Ensemble risk', C.skip));
@@ -341,7 +369,7 @@ function naVM(S, A) {
   if (st.protocol === 'random' && st.doPrivacy) missing.push('Membership protocol is a random proxy: a low attack score cannot support a “Low observed concern” category.');
   const files = !!(D.realMeta && D.realMeta.status !== 'error' && !(D.realMeta.check && D.realMeta.check.errors.length) && D.synthMeta && D.synthMeta.status !== 'error' && !(D.synthMeta.check && D.synthMeta.check.errors.length));
   const modOn = st.doFidelity || st.doUtility || st.doPrivacy;
-  const attackList = SDA.attackCatalogue.map(a => ({ id: a.id, name: a.name, desc: a.description, implemented: a.implemented, checked: a.id === 'mia' ? st.attackMia : a.id === 'exact' ? st.attackExact : false, name2: a.id === 'mia' ? 'settings.attackMia' : a.id === 'exact' ? 'settings.attackExact' : 'x', status: a.implemented ? bd('Available', 'green', 'check') : bd('Not available', 'grey', 'dash') }));
+  const attackList = SDA.attackCatalogue.map(a => ({ id: a.id, name: a.name, desc: a.description, implemented: a.implemented, checked: a.id === 'mia' ? st.attackMia : a.id === 'exact' ? st.attackExact : false, name2: a.id === 'mia' ? 'settings.attackMia' : a.id === 'exact' ? 'settings.attackExact' : 'x', srvOn: !a.implemented && !!(S.sv && S.sv.health), status: a.implemented ? bd('In the browser', 'green', 'check') : S.sv && S.sv.health ? bd('On the server', 'green', 'check') : bd('Server offline', 'amber', 'alert') }));
   const primaryOpts = (info.task === 'regression' ? [['rmse', 'RMSE (lower is better)'], ['mae', 'MAE (lower is better)'], ['r2', 'R² (higher is better)']] : [['accuracy', 'Accuracy'], ['f1', 'F1 (macro)'], ['precision', 'Precision (macro)'], ['recall', 'Recall (macro)'], ['rocAuc', 'ROC-AUC']]).map(o => ({ id: o[0], label: o[1] }));
   // profile
   const prof = v ? { has: true, status: bd(v.status), canRun: v.canRun, checks: v.checks.map(c => ({ label: c.label, bd: bd(c.status), summary: c.summary })), mismatch: v.realOnly.length > 0 || v.synthOnly.length > 0, memberCol: (v.realOnly.find(c => /member/i.test(c)) || ''), hasMemberHint: v.realOnly.some(c => /member/i.test(c)), useMember: A.useMembership((v.realOnly.find(c => /member/i.test(c)) || '')), realOnly: v.realOnly.join(', ') || 'none', synthOnly: v.synthOnly.join(', ') || 'none', onPrepared: D.use.real === 'cleaned' || D.use.synth === 'cleaned', rows: nf(v.rows.real) + ' real · ' + nf(v.rows.synth) + ' synthetic rows', cols: v.plan.evalCols.length + ' columns evaluated · ' + v.plan.excluded.length + ' excluded' } : { has: false };
@@ -524,10 +552,10 @@ function prVM(S, A, cur) {
   const P = cur && cur.results.privacy; if (!P || !P.attacks || !P.attacks.length) return { has: false, none: !cur, why: P && P.reason };
   const E = cur.results.ensemble;
   const cards = P.attacks.concat(P.pending.map(p => Object.assign({}, p, { pend: true }))).map(a => {
-    const c = { cls: a.status === 'Not applicable' ? 'card card-pend' : 'card', id: a.id, name: a.name, desc: a.description, bd: bd(a.status === 'Completed' ? 'Completed' : a.status), status: a.status, isMia: a.id === 'mia' && a.status === 'Completed', isExact: a.id === 'exact' && a.status === 'Completed', done: a.status === 'Completed', failed: a.status === 'Failed', notRun: a.status === 'Not Run', pending: a.status === 'Pending', msg: a.error || a.reason || (a.status === 'Not applicable' ? 'Runs only in the offline Python pipeline. No result is shown for it here.' : ''), hasMsg: !!(a.error || a.reason || a.status === 'Pending') };
+    const c = { cls: a.status === 'Not applicable' || a.status === 'Pending' ? 'card card-pend' : 'card', id: a.id, name: a.name, desc: a.description, bd: bd(a.status === 'Completed' ? 'Completed' : a.status), status: a.status, isMia: a.id === 'mia' && a.status === 'Completed', isExact: a.id === 'exact' && a.status === 'Completed', done: a.status === 'Completed', failed: a.status === 'Failed', notRun: a.status === 'Not Run', pending: a.status === 'Pending', msg: a.error || a.reason || (a.status === 'Not applicable' ? 'Not run for this audit.' : ''), hasMsg: !!(a.error || a.reason || a.status === 'Pending'), isSrv: !!a.server, hasRates: false, rates: [], isInfer: false, secrets: [] };
     if (a.status === 'Completed') {
       c.setup = a.setup; c.seed = String(a.seed); c.validity = a.validity === 'labelled' ? bd('Labelled membership', 'green', 'check') : a.validity === 'attested' ? bd('Attested membership', 'green', 'check') : a.validity === 'proxy' ? bd('Proxy membership', 'amber', 'alert') : bd('Direct comparison', 'green', 'check');
-      c.params = Object.keys(a.params).map(k => ({ k: ({ scoring: 'Distance / scoring method', members: 'Members scored', nonMembers: 'Non-members scored', syntheticRecords: 'Synthetic records searched', memberFraction: 'Member fraction', columns: 'Columns used', ciMethod: 'AUC interval', mode: 'Mode', comparison: 'Comparison', syntheticRows: 'Synthetic rows tested', baselineRows: 'Baseline real rows', referenceRows: 'Reference real rows', matching: 'Matching rule' })[k] || k, v: Array.isArray(a.params[k]) ? a.params[k].join(', ') : String(a.params[k]) }));
+      c.params = Object.keys(a.params).map(k => ({ k: ({ scoring: 'Distance / scoring method', members: 'Members scored', nonMembers: 'Non-members scored', syntheticRecords: 'Synthetic records searched', memberFraction: 'Member fraction', columns: 'Columns used', ciMethod: 'AUC interval', method: 'Method', queries: 'Attack queries', mode: 'Mode', comparison: 'Comparison', syntheticRows: 'Synthetic rows tested', baselineRows: 'Baseline real rows', referenceRows: 'Reference real rows', matching: 'Matching rule' })[k] || k, v: Array.isArray(a.params[k]) ? a.params[k].join(', ') : String(a.params[k]) }));
       c.caveats = a.caveats || []; c.warnings = a.warnings || [];
       const T = a.threatModel; c.hasThreat = !!T; c.threat = T ? [['Attacker access', T.access], ['Member / non-member construction', T.construction], ['Distance / matching', T.distance], ['Preprocessing', T.preprocessing], ['Leakage control', T.separation], ['Sample sizes', T.samples], ['Attack seed', String(T.seed)]].map(x => ({ k: x[0], v: x[1] })) : [];
       if (a.id === 'mia') {
@@ -539,24 +567,39 @@ function prVM(S, A, cur) {
       } else if (a.id === 'exact') {
         const m = a.metrics; c.metrics = [{ k: 'Synthetic rows copying a real row', v: fmtPct(m.synthMatchRate, 2), sub: m.synthMatches + ' of ' + a.params.syntheticRows }, { k: 'Natural baseline (real vs real)', v: fmtPct(m.baselineMatchRate, 2), sub: m.baselineMatches + ' of ' + a.params.baselineRows }, { k: 'Excess over baseline', v: (m.excessPp >= 0 ? '+' : '') + fmt(m.excessPp, 2) + ' pp', sub: 'the signal used by the ensemble' }];
         c.interp = m.excessPp < 1 ? 'The synthetic data copies real rows no more often than real rows collide with each other. No verbatim copying is indicated.' : 'The synthetic data reproduces real rows more often than natural collisions would explain. Inspect the matching rows securely.';
+      } else if (a.server) {
+        c.metrics = a.display || []; c.interp = a.interp || ''; c.rates = a.rates || []; c.hasRates = c.rates.length > 0;
+        c.isInfer = a.id === 'attr' && (a.secretRows || []).length > 1; c.secrets = a.secretRows || [];
+        c.bd = a.srv && a.srv.above ? bd('Above chance', 'amber', 'alert') : bd('Consistent with chance', 'grey', 'dash');
       }
     }
     return c;
   });
   const done = P.attacks.filter(a => a.status === 'Completed');
-  const table = P.attacks.concat(P.pending.map(p => Object.assign({}, p))).map(a => ({ name: a.short, bd: bd(a.status), auc: a.metrics && a.metrics.auc !== undefined ? fmt(a.metrics.auc) : '—', tpr: a.metrics && a.metrics.tpr10 !== undefined ? fmt(a.metrics.tpr10) : '—', excess: a.metrics && a.metrics.excessPp !== undefined ? fmt(a.metrics.excessPp, 2) + ' pp' : '—', sample: a.sampleSizes ? (a.sampleSizes.members !== undefined ? a.sampleSizes.members + ' / ' + a.sampleSizes.nonMembers : a.sampleSizes.synthetic + ' / ' + a.sampleSizes.baseline) : '—', seed: a.seed === undefined ? '—' : String(a.seed), note: a.error || a.reason || (a.status === 'Not applicable' ? 'Not available in this version' : a.setup ? a.setup.slice(0, 90) + (a.setup.length > 90 ? '…' : '') : '') }));
+  const mainOf = a => { if (a.status !== 'Completed') return { v: '—', ci: '—', what: '' };
+    if (a.id === 'mia') return { v: fmt(a.metrics.auc), ci: a.metrics.aucCI ? fmt(a.metrics.aucCI[0]) + '–' + fmt(a.metrics.aucCI[1]) : '—', what: 'ROC-AUC · chance 0.5' };
+    if (a.id === 'exact') return { v: (a.metrics.excessPp >= 0 ? '+' : '') + fmt(a.metrics.excessPp, 2) + ' pp', ci: '—', what: 'excess copies · chance 0' };
+    if (a.srv) return { v: a.srv.main === null ? 'N/A' : fmt(a.srv.main, a.srv.dec) + (a.srv.unit || ''), ci: a.srv.ci ? fmt(a.srv.ci[0]) + '–' + fmt(a.srv.ci[1]) : '—', what: a.id === 'shadow' ? 'ROC-AUC · chance 0.5' : 'risk · chance 0' };
+    return { v: '—', ci: '—', what: '' }; };
+  const table = P.attacks.concat(P.pending.map(p => Object.assign({}, p))).map(a => { const mm = mainOf(a); return { name: a.short, where: a.server ? 'Server' : 'Browser', bd: a.srv ? (a.srv.above ? bd('Above chance', 'amber', 'alert') : bd('Consistent with chance', 'grey', 'dash')) : bd(a.status), main: mm.v, ci: mm.ci, what: mm.what, auc: a.metrics && a.metrics.auc !== undefined ? fmt(a.metrics.auc) : '—', tpr: a.metrics && a.metrics.tpr10 !== undefined ? fmt(a.metrics.tpr10) : '—', excess: a.metrics && a.metrics.excessPp !== undefined ? fmt(a.metrics.excessPp, 2) + ' pp' : '—', sample: a.sampleSizes ? (a.sampleSizes.members !== undefined ? a.sampleSizes.members + ' / ' + a.sampleSizes.nonMembers : a.sampleSizes.synthetic + ' / ' + a.sampleSizes.baseline) : '—', seed: a.seed === undefined ? '—' : String(a.seed), note: a.error || a.reason || '' }; });
+  const SV = P.server || {}; const raw = A.hasRaw(cur.id); const nPend = P.pending.length;
+  const srv = SV.status === 'running' || SV.status === 'queued' || SV.status === 'uploading' ? { show: true, tone: 'blue', icon: 'refresh', text: 'The other ' + (nPend || 4) + ' tests are running on the auditor server' + (SV.done !== undefined && SV.of ? ' (' + SV.done + ' of ' + SV.of + ' steps)' : '') + '. Keep this page open; results appear here when they finish.', canRetry: false }
+    : nPend ? { show: true, tone: 'amber', icon: 'alert', text: (SV.error ? 'The server tests did not finish: ' + SV.error : 'The other ' + nPend + ' tests run on the auditor server and have not run for this audit yet.') + (raw ? '' : ' Upload the files again in New Audit to run them.'), canRetry: raw, retry: A.srvRetry(cur.id) }
+    : { show: false };
   const comps = (E.components || []).map(c => ({ label: c.label, w: c.score * 100, text: fmt(c.value, c.fmt) + c.unit, level: bd(c.level), cls: c.levelIdx === 2 ? 'lv-high' : c.levelIdx === 1 ? 'lv-mod' : 'lv-low' }));
-  return { has: true, kind: kindOf(cur), cards, table, comps, hasComps: comps.length > 0, goBench: A.go('bench'), doneCount: done.length, total: P.attacks.length + P.pending.length, summary: done.length + ' of ' + (P.attacks.length + P.pending.length) + ' attack types tested · ' + P.attacks.filter(a => a.status === 'Failed').length + ' failed · ' + P.attacks.filter(a => a.status === 'Not Run').length + ' not run · ' + P.pending.length + ' pending', dl: A.dlTable('privacy_attacks.csv'), dlComp: A.dlPlot('ensemble_signals.svg') };
+  const above = P.attacks.filter(a => a.status === 'Completed' && ((a.srv && a.srv.above) || (E.components || []).some(x => x.attack === a.id && x.levelIdx > 0))).length;
+  return { has: true, kind: kindOf(cur), cards, table, comps, hasComps: comps.length > 0, srv, doneCount: done.length, total: P.attacks.length + P.pending.length, summary: done.length + ' of ' + (P.attacks.length + P.pending.length) + ' privacy tests completed' + (done.length ? ' · ' + above + ' showing a signal' : '') + (P.attacks.filter(a => a.status === 'Failed').length ? ' · ' + P.attacks.filter(a => a.status === 'Failed').length + ' failed' : ''), dl: A.dlTable('privacy_attacks.csv'), dlComp: A.dlPlot('ensemble_signals.svg') };
 }
 
 /* ───────── Ensemble ───────── */
 function enVM(S, A, cur) {
   const E = cur && cur.results.ensemble; if (!E || !E.category) return { has: false, none: !cur };
   const R = SDA.ensembleRules; const C = E.coverage;
-  const segs = [['Completed', C.completed, 'seg-ok'], ['Failed', C.failed, 'seg-bad'], ['Not run', C.notRun, 'seg-nr'], ['Not available', C.pending, 'seg-pend']].map(s => ({ label: s[0], count: s[1], w: s[1] / (C.completed + C.failed + C.notRun + C.pending) * 100, cls: 'seg ' + s[2], show: s[1] > 0 }));
+  const segs = [['Completed', C.completed, 'seg-ok'], ['Failed', C.failed, 'seg-bad'], ['Not run', C.notRun, 'seg-nr'], ['Pending', C.pending, 'seg-pend']].map(s => ({ label: s[0], count: s[1], w: s[1] / (C.completed + C.failed + C.notRun + C.pending) * 100, cls: 'seg ' + s[2], show: s[1] > 0 }));
   const comps = E.components.map(c => ({ label: c.label, raw: fmt(c.value, c.fmt) + c.unit, ci: c.ci ? '95% CI ' + fmt(c.ci[0]) + '–' + fmt(c.ci[1]) : '', lvl: bd(c.level), score: fmt(c.score, 2), w: c.score * 100, cls: c.levelIdx === 2 ? 'lv-high' : c.levelIdx === 1 ? 'lv-mod' : 'lv-low', validity: c.validity === 'proxy' ? 'Proxy membership' : c.validity === 'labelled' ? 'Labelled membership' : c.validity === 'attested' ? 'Attested membership' : 'Direct comparison', thr: c.thresholds, mod: R.signals.find(s => s.id === c.id).moderate, high: R.signals.find(s => s.id === c.id).high, chance: R.signals.find(s => s.id === c.id).chance, strong: R.signals.find(s => s.id === c.id).strong }));
   const drivers = E.components.filter(c => c.levelIdx === Math.max.apply(null, E.components.map(x => x.levelIdx))).map(c => c.label);
-  return { has: true, kind: kindOf(cur), category: E.category, label: E.label, tone: E.tone, insufficient: E.insufficient, icon: E.tone === 'red' ? 'x' : E.tone === 'amber' ? 'alert' : E.tone === 'green' ? 'check' : 'dash', rationale: E.rationale, conflicts: E.conflicts, hasConflicts: E.conflicts.length > 0, uncertainty: E.uncertainty, followUps: E.followUps, comps, hasComps: comps.length > 0, drivers: drivers.join(', '), hasDrivers: !!drivers.length && !E.insufficient && (E.category === 'High' || E.category === 'Moderate'),
+  const srvRows = (E.serverSignals || []).map(x => ({ label: x.label, raw: x.value === null || x.value === undefined ? 'N/A' : fmt(x.value), ci: x.ci ? fmt(x.ci[0]) + '–' + fmt(x.ci[1]) : '—', chance: String(x.chance), bd: x.above ? bd('Above chance', 'amber', 'alert') : bd('Consistent with chance', 'grey', 'dash') }));
+  return { srvRows, hasSrv: srvRows.length > 0, has: true, kind: kindOf(cur), category: E.category, label: E.label, tone: E.tone, insufficient: E.insufficient, icon: E.tone === 'red' ? 'x' : E.tone === 'amber' ? 'alert' : E.tone === 'green' ? 'check' : 'dash', rationale: E.rationale, conflicts: E.conflicts, hasConflicts: E.conflicts.length > 0, uncertainty: E.uncertainty, followUps: E.followUps, comps, hasComps: comps.length > 0, drivers: drivers.join(', '), hasDrivers: !!drivers.length && !E.insufficient && (E.category === 'High' || E.category === 'Moderate'),
     coverage: { segs, completed: C.completed, failed: C.failed, notRun: C.notRun, pending: C.pending, planned: C.planned, text: C.completed + ' of ' + C.planned + ' attack types tested' }, rulesVersion: R.version,
     thresholds: R.signals.map(s => ({ label: s.label, chance: s.chance + s.unit, moderate: '≥ ' + s.moderate + s.unit, high: '≥ ' + s.high + s.unit, strong: s.strong + s.unit })), principles: R.principles, minCompleted: R.minCompleted,
     scale: [{ lab: 'Low observed concern', tone: 'green', text: 'Every completed signal is below its Moderate threshold, ≥ 2 tests completed, and the membership setup is labelled or attested.' }, { lab: 'Moderate observed concern', tone: 'amber', text: 'At least one signal reached Moderate; none reached High.' }, { lab: 'High observed concern', tone: 'red', text: 'At least one signal reached its High threshold.' }, { lab: 'Inconclusive', tone: 'grey', text: 'Too few completed tests, a failed membership attack, or only proxy membership evidence for a “Low” statement. Shown as “Insufficient Evidence for a Reliable Risk Category”.' }], dl: A.dlTable('ensemble_components.csv'), dlPlot: A.dlPlot('ensemble_signals.svg'),
@@ -566,17 +609,18 @@ function enVM(S, A, cur) {
 /* ───────── Governance ───────── */
 function gvVM(S, A, cur, gov) {
   const KB = SDA.kb; const fw = KB.frameworks.map(f => KB.frameworkView(f, S.kbState));
-  const tabs = [['frameworks', 'A · Frameworks', fw.length], ['kb', 'B · Knowledge base', KB.rules.length], ['applic', 'C · Applicability', gov ? gov.applicability.length : 0], ['map', 'D · Mappings', gov ? gov.mappings.length : 0], ['recs', 'E · Recommendations', gov ? gov.recs.length : 0], ['gaps', 'F · Evidence gaps', gov ? gov.gaps.length : 0], ['review', 'G · Human review', gov ? gov.mappings.length : 0]].map(t => ({ id: t[0], label: t[1], count: t[2], cls: 'tab' + (S.ui.gvTab === t[0] ? ' on' : ''), go: A.setUi('gvTab', t[0]) }));
+  const tabs = [['frameworks', 'Laws & standards', fw.length], ['kb', 'Key provisions', KB.rules.length], ['applic', 'Which apply', gov ? gov.applicability.length : 0], ['map', 'What results mean', gov ? gov.mappings.length : 0], ['recs', 'Next steps', gov ? gov.recs.length : 0], ['gaps', 'Missing info', gov ? gov.gaps.length : 0], ['review', 'Review', gov ? gov.mappings.length : 0]].map(t => ({ id: t[0], label: t[1], count: t[2], cls: 'tab' + (S.ui.gvTab === t[0] ? ' on' : ''), go: A.setUi('gvTab', t[0]) }));
   const vm = { tabs, tFw: S.ui.gvTab === 'frameworks', tKb: S.ui.gvTab === 'kb', tAp: S.ui.gvTab === 'applic', tMap: S.ui.gvTab === 'map', tRec: S.ui.gvTab === 'recs', tGap: S.ui.gvTab === 'gaps', tRev: S.ui.gvTab === 'review', hasAudit: !!cur, kbVersion: KB.version, disclaimer: SDA.disclaimer, editCtx: A.editContext, kind: cur ? kindOf(cur) : null };
   // A
   const typeFilter = S.ui.fwType;
   vm.fwFilters = [['all', 'All'], ['Binding law', 'Binding laws'], ['Voluntary framework', 'Voluntary frameworks'], ['Technical standard', 'Technical standards']].map(t => ({ label: t[1], cls: 'chip' + (typeFilter === t[0] ? ' on' : ''), go: A.setUi('fwType', t[0]) }));
-  vm.fwCards = fw.filter(f => typeFilter === 'all' || f.instrument === typeFilter).map(f => ({ name: f.name, long: f.long, jurisdiction: f.jurisdiction, inst: bd(f.instrument), status: bd(f.status), version: f.version, effective: f.effective, freshness: f.freshness, stale: !f.lastChecked, url: f.url, url2: f.url2, hasUrl2: !!f.url2, body: f.body, rules: f.ruleCount, reviewed: f.reviewedCount, hasRules: f.ruleCount > 0, note: f.note, hasNote: !!f.note }));
+  const stateBd = s => s === 'In force' ? bd('In force', 'green', 'check') : s === 'Phasing in' ? bd('Phasing in', 'amber', 'clock') : s === 'Voluntary' ? bd('Voluntary', 'blue', 'info') : bd(s || 'Standard', 'grey', 'file');
+  vm.fwCards = fw.filter(f => typeFilter === 'all' || f.instrument === typeFilter).map(f => ({ state: stateBd(f.state), since: f.since || f.effective, latest: f.latest || '—', means: f.means || '', checked: f.checked || '', name: f.name, long: f.long, jurisdiction: f.jurisdiction, inst: bd(f.instrument), status: bd(f.status), version: f.version, effective: f.effective, freshness: f.freshness, stale: !f.lastChecked, url: f.url, url2: f.url2, hasUrl2: !!f.url2, body: f.body, rules: f.ruleCount, reviewed: f.reviewedCount, hasRules: f.ruleCount > 0, note: f.note, hasNote: !!f.note }));
   vm.fwLegend = [['Catalogue Only', 'Listed with an official source; no reviewed rules are active.'], ['Draft Rules', 'Rule records exist but are unverified; they produce review prompts only.'], ['Verified Subset', 'Specific provisions were project-reviewed; coverage is limited to those entries.'], ['Needs Update', 'Source or version may have changed, or a review date has expired.'], ['Not Supported', 'Not supported in this version.']].map(x => ({ bd: bd(x[0]), text: x[1] }));
   vm.fwCounts = { binding: fw.filter(f => f.instrument === 'Binding law').length, vol: fw.filter(f => f.instrument === 'Voluntary framework').length, std: fw.filter(f => f.instrument === 'Technical standard').length, withRules: fw.filter(f => f.ruleCount).length };
   // B
   const fwSel = S.ui.kbFw; vm.kbFilters = [{ label: 'All frameworks', cls: 'chip' + (fwSel === 'all' ? ' on' : ''), go: A.setUi('kbFw', 'all') }].concat(fw.filter(f => f.ruleCount).map(f => ({ label: f.name, cls: 'chip' + (fwSel === f.id ? ' on' : ''), go: A.setUi('kbFw', f.id) })));
-  vm.rules = KB.rules.filter(r => fwSel === 'all' || r.fw === fwSel).map(r => { const rv = KB.ruleView(r, S.kbState); const form = Object.assign({ reviewer: '', note: '' }, (S.kbForm || {})[r.id]); return { id: r.id, framework: rv.frameworkName, inst: bd(rv.instrument), provision: rv.provision, title: rv.title, summary: rv.summary, url: rv.url, urlNote: rv.urlNote, version: rv.version, effective: rv.effectiveStatus + (rv.effectiveVerified ? '' : ' (not independently verified)'), conditions: rv.conditions, sourceType: rv.sourceType, reviewDate: rv.reviewDate || 'Not yet reviewed', ver: bd(rv.verification), reviewed: rv.verification === 'Project-reviewed', stale: !!rv.stale, reviewer: rv.reviewer || '—', note: rv.reviewNote || '', form, onReviewer: A.kbField(r.id, 'reviewer'), onNote: A.kbField(r.id, 'note'), mark: A.kbMark(r.id), reset: A.kbReset(r.id), canMark: (form.reviewer || '').trim().length > 1 }; });
+  vm.rules = KB.rules.filter(r => fwSel === 'all' || r.fw === fwSel).map(r => { const rv = KB.ruleView(r, S.kbState); const form = Object.assign({ reviewer: '', note: '' }, (S.kbForm || {})[r.id]); return { id: r.id, framework: rv.frameworkName, inst: bd(rv.instrument), provision: rv.provision, title: rv.title, summary: rv.summary, url: rv.url, urlNote: rv.urlNote, version: rv.version, effective: rv.effectiveStatus + (rv.effectiveVerified ? '' : ' (not independently verified)'), conditions: rv.conditions, sourceType: rv.sourceType, reviewDate: rv.reviewDate || 'Not yet reviewed', ver: rv.verification === 'Project-reviewed' ? bd('Reviewed by your team', 'green', 'check') : bd('Summary', 'grey', 'book'), reviewed: rv.verification === 'Project-reviewed', stale: !!rv.stale, reviewer: rv.reviewer || '—', note: rv.reviewNote || '', form, onReviewer: A.kbField(r.id, 'reviewer'), onNote: A.kbField(r.id, 'note'), mark: A.kbMark(r.id), reset: A.kbReset(r.id), canMark: (form.reviewer || '').trim().length > 1 }; });
   vm.kbStats = { total: KB.rules.length, reviewed: vm.rules.filter(r => r.reviewed).length, shown: vm.rules.length };
   vm.kbTotals = KB.rules.filter(r => KB.ruleView(r, S.kbState).verification === 'Project-reviewed').length;
   vm.kbSplit = [['Compliance Knowledge Base', 'The controlled library the auditor may use: framework entries, provision identifiers, plain-English summaries, official source links, versions, applicability conditions and review status. It does not decide anything by itself.'], ['Compliance Mapper', 'The reasoning layer: it checks your context, evaluates versioned mapping rules over measured evidence, records why a rule matched, lists missing evidence and proposes actions. It never invents provisions.'], ['Risk Interpretation Engine', 'Technical: turns attack metrics into an empirical risk category under documented thresholds. Not a legal verdict.'], ['Human review', 'A reviewer can accept, reject, defer or comment on every mapping; the original machine-generated finding is never overwritten.']].map(x => ({ t: x[0], d: x[1] }));
@@ -590,7 +634,7 @@ function gvVM(S, A, cur, gov) {
   // D with filters
   const mf = S.ui.mapFw, ms = S.ui.mapSuf, mr = S.ui.mapRev;
   const mapped = gov.mappings.filter(m => (mf === 'all' || m.frameworkId === mf) && (ms === 'all' || m.sufficiency === ms) && (mr === 'all' || m.reviewStatus === mr));
-  vm.maps = mapped.map(m => ({ id: m.id, finding: m.finding, evidence: m.evidence, kind: m.evidenceKind, framework: m.framework, inst: bd(m.instrument), provision: m.provision, ptitle: m.provisionTitle, why: m.why, suf: bd(m.sufficiency === 'Partial' ? 'Partial' : m.sufficiency, m.sufficiency === 'Sufficient' ? 'green' : m.sufficiency === 'Partial' ? 'amber' : 'red', m.sufficiency === 'Sufficient' ? 'check' : m.sufficiency === 'Partial' ? 'alert' : 'x'), action: m.action, url: m.url, rule: bd(m.ruleVerification), caveat: m.caveat, hasCaveat: !!m.caveat, review: bd(m.reviewStatus, TONE[m.reviewStatus] || 'grey', m.reviewStatus === 'Pending' ? 'clock' : undefined), applic: m.applicability }));
+  vm.maps = mapped.map(m => ({ id: m.id, finding: m.finding, evidence: m.evidence, kind: m.evidenceKind, framework: m.framework, inst: bd(m.instrument), provision: m.provision, ptitle: m.provisionTitle, why: m.why, suf: bd(m.sufficiency === 'Partial' ? 'Partial' : m.sufficiency, m.sufficiency === 'Sufficient' ? 'green' : m.sufficiency === 'Partial' ? 'amber' : 'red', m.sufficiency === 'Sufficient' ? 'check' : m.sufficiency === 'Partial' ? 'alert' : 'x'), action: m.action, url: m.url, rule: m.ruleVerification === 'Project-reviewed' ? bd('Reviewed by your team', 'green', 'check') : bd('Check the source', 'grey', 'book'), caveat: m.caveat, hasCaveat: !!m.caveat, review: bd(m.reviewStatus, TONE[m.reviewStatus] || 'grey', m.reviewStatus === 'Pending' ? 'clock' : undefined), applic: m.applicability }));
   vm.mapFwOpts = [{ id: 'all', label: 'All frameworks' }].concat(Array.from(new Set(gov.mappings.map(m => m.frameworkId))).map(id => ({ id, label: KB.frameworks.find(f => f.id === id).name })));
   vm.mapCount = mapped.length; vm.mapTotal = gov.mappings.length; vm.hasMaps = gov.mappings.length > 0; vm.noMapsMatch = gov.mappings.length > 0 && mapped.length === 0;
   vm.withheld = gov.withheld; vm.hasWithheld = gov.withheld.length > 0; vm.dlMaps = A.dlTable('governance_mappings.csv');
@@ -611,8 +655,8 @@ function gvVM(S, A, cur, gov) {
 /* ───────── Compare ───────── */
 function cmVM(S, A) {
   const f = S.cmp; const rows = [];
-  SDA.baseline.rows.forEach(r => rows.push({ key: 'h:' + r.name, name: r.name, src: 'hist', kindBd: histBd, domain: r.domain, task: 'Not recorded', generator: 'Not recorded', status: 'Historical', statusBd: bd('Historical', 'hist', 'archive'), overall: r.overall, shapes: r.shapes, trends: r.trends, corr: r.corrDiff, ret: r.retention, mia: r.mia, cov: null, ens: null, gov: null, date: '', canOpen: false, open: null, flag: r.flag || '' }));
-  SDA.benchAll(S).forEach(b => { const d = b.attacks.find(x => x.id === 'dcr'); rows.push({ key: 'b:' + b.key, name: b.name, src: 'bench', kindBd: b.origin === 'imported' ? bd('Imported pipeline result', 'navy', 'upload') : bd('Benchmark · offline', 'navy', 'layers'), domain: 'Not recorded', task: b.task, generator: b.generator.split('(')[0].trim() + ' (pipeline)', status: b.failed ? 'Partial' : 'Completed', statusBd: bd(b.failed ? 'Partial' : 'Completed'), overall: b.fid.overall, shapes: b.fid.shapes, trends: b.fid.trends, corr: b.fid.corr, ret: b.util.retention, retMetric: (PRIM[b.util.primary] || b.util.primary || '') + ' · random forest', mia: d && d.status === 'Completed' ? d.main : null, cov: b.completed, ens: null, gov: null, date: '', canOpen: true, open: A.bnOpenPage(b.key), openLabel: 'Open in Benchmark', flag: b.skipped ? b.skipped + ' attack skipped (dataset too small)' : '' }); });
+  (TEAM ? SDA.baseline.rows : []).forEach(r => rows.push({ key: 'h:' + r.name, name: r.name, src: 'hist', kindBd: histBd, domain: r.domain, task: 'Not recorded', generator: 'Not recorded', status: 'Historical', statusBd: bd('Historical', 'hist', 'archive'), overall: r.overall, shapes: r.shapes, trends: r.trends, corr: r.corrDiff, ret: r.retention, mia: r.mia, cov: null, ens: null, gov: null, date: '', canOpen: false, open: null, flag: r.flag || '' }));
+  SDA.benchAll(S).forEach(b => { const d = b.attacks.find(x => x.id === 'dcr'); rows.push({ key: 'b:' + b.key, name: b.name, src: 'bench', kindBd: b.viaServer ? bd('Generated & audited', 'navy', 'bolt') : b.origin === 'imported' ? bd('Imported result', 'navy', 'upload') : bd('Study dataset', 'navy', 'layers'), domain: 'Not recorded', task: b.task, generator: b.generator.split('(')[0].trim() + ' (pipeline)', status: b.failed ? 'Partial' : 'Completed', statusBd: bd(b.failed ? 'Partial' : 'Completed'), overall: b.fid.overall, shapes: b.fid.shapes, trends: b.fid.trends, corr: b.fid.corr, ret: b.util.retention, retMetric: (PRIM[b.util.primary] || b.util.primary || '') + ' · random forest', mia: d && d.status === 'Completed' ? d.main : null, cov: b.completed, ens: null, gov: null, date: '', canOpen: true, open: A.bnOpenPage(b.key), openLabel: 'Open in Benchmark', flag: b.skipped ? b.skipped + ' attack skipped (dataset too small)' : '' }); });
   S.audits.forEach(a => { const R = a.results, P = R.privacy; const G = SDA.kb.buildGovernance(a, S.kbState); const mia = P && P.attacks && P.attacks.find(x => x.id === 'mia' && x.status === 'Completed'); rows.push({ key: a.id, name: a.name, src: a.source === 'demo' ? 'demo' : 'cur', kindBd: kindOf(a), domain: a.info.domain || 'Not provided', task: a.info.target ? a.info.task : 'No target', generator: a.info.generator || 'Not provided', status: a.status, statusBd: bd(a.status), overall: R.fidelity && R.fidelity.status === 'Completed' ? R.fidelity.overall : null, shapes: R.fidelity && R.fidelity.status === 'Completed' ? R.fidelity.columnShapes : null, trends: R.fidelity && R.fidelity.status === 'Completed' ? R.fidelity.pairTrends : null, corr: R.fidelity && R.fidelity.status === 'Completed' ? R.fidelity.avgCorrDiff : null, ret: R.utility && R.utility.status === 'Completed' ? R.utility.headline.retention : null, retMetric: R.utility && R.utility.status === 'Completed' ? SDA.metricMeta[R.utility.primary].label + ' (' + R.utility.task + ')' : '', mia: mia ? mia.metrics.auc : null, cov: P && P.attacks ? (R.ensemble.coverage ? R.ensemble.coverage.completed : 0) : null, ens: R.ensemble && R.ensemble.category ? R.ensemble.category : null, gov: G.mappings.length, date: a.createdAt, canOpen: true, open: A.open(a.id), flag: '' }); });
   const uniq = k => Array.from(new Set(rows.map(r => r[k]))).filter(Boolean).sort();
   const opt = (name, k, all) => ({ name, key: k, opts: [{ id: '', label: all }].concat(uniq(k).map(v => ({ id: v, label: v }))) });
@@ -621,12 +665,12 @@ function cmVM(S, A) {
   const sortKey = { name: r => r.name.toLowerCase(), fid: r => r.overall === null ? -1 : -r.overall, ret: r => r.ret === null ? 1e9 : -r.ret, mia: r => r.mia === null ? 1e9 : -r.mia, date: r => r.date ? -Date.parse(r.date) : 0 }[f.sort] || (r => r.name);
   vis = vis.slice().sort((a, b) => { const x = sortKey(a), y = sortKey(b); return x < y ? -1 : x > y ? 1 : 0; });
   const cls = r => r.src === 'hist' ? 'hist' : r.src === 'demo' ? 'demo' : r.src === 'bench' ? 'bench' : 'cur';
-  const chart = (title, sub, getter, lo, hi, textFn, na) => ({ title, sub, rows: vis.map(r => { const v = getter(r); const b = bar(r.name, r.src === 'hist' ? 'Historical baseline' : r.src === 'demo' ? 'Demo audit' : r.src === 'bench' ? 'Benchmark · offline pipeline' : 'Current audit', v, lo, hi, v === null || v === undefined ? '' : textFn(v), cls(r)); if (b.na) { b.text = na || 'N/A'; } return b; }) });
+  const chart = (title, sub, getter, lo, hi, textFn, na) => ({ title, sub, rows: vis.map(r => { const v = getter(r); const b = bar(r.name, r.src === 'hist' ? 'Historical baseline' : r.src === 'demo' ? 'Demo audit' : r.src === 'bench' ? (TEAM ? 'Study dataset' : 'Generated & audited') : 'Audit', v, lo, hi, v === null || v === undefined ? '' : textFn(v), cls(r)); if (b.na) { b.text = na || 'N/A'; } return b; }) });
   const maxGov = Math.max(1, Math.max.apply(null, vis.map(r => r.gov || 0)));
-  const charts = [chart('Fidelity — Overall Quality', 'Scale 0–1 · same definition for every row', r => r.overall, 0, 1, fmt), chart('Utility retention', 'Scale 0–120% · only compare like with like (task, model, metric differ between rows)', r => r.ret, 0, 120, fmtPct), chart('Membership-inference ROC-AUC', 'Axis starts at 0.40 · dashed line = 0.5 (random guessing)', r => r.mia, 0.4, 1, fmt, 'N/A'), chart('Privacy-test coverage', 'Attack types tested (of 6) · baseline runs did not record coverage', r => r.cov === null ? null : r.cov, 0, 6, v => v + ' of 6', 'Not recorded'), chart('Governance mappings', 'Review prompts per audit · baseline runs have none recorded', r => r.gov === null ? null : r.gov, 0, maxGov, v => String(v), 'Not recorded')];
+  const charts = [chart('Fidelity — Overall Quality', 'Scale 0–1 · same definition for every row', r => r.overall, 0, 1, fmt), chart('Utility retention', 'Scale 0–120% · only compare like with like (task, model, metric differ between rows)', r => r.ret, 0, 120, fmtPct), chart('Membership-inference ROC-AUC', 'Axis starts at 0.40 · dashed line = 0.5 (random guessing)', r => r.mia, 0.4, 1, fmt, 'N/A'), chart('Privacy-test coverage', 'Privacy tests completed (of 6)', r => r.cov === null ? null : r.cov, 0, 6, v => v + ' of 6', 'Not recorded'), chart('Governance mappings', 'Review prompts per audit · baseline runs have none recorded', r => r.gov === null ? null : r.gov, 0, maxGov, v => String(v), 'Not recorded')];
   const trs = vis.map(r => ({ key: r.key, name: r.name, kindBd: r.kindBd, domain: r.domain, task: r.task, generator: r.generator, statusBd: r.statusBd, overall: r.overall === null ? 'N/A' : fmt(r.overall), shapes: r.shapes === null ? 'N/A' : fmt(r.shapes), trends: r.trends === null ? 'N/A' : fmt(r.trends), corr: r.corr === null ? 'N/A' : fmt(r.corr), ret: r.ret === null ? 'N/A' : fmtPct(r.ret), retMetric: r.retMetric || (r.src === 'hist' ? 'metric not recorded' : ''), mia: r.mia === null ? 'N/A' : fmt(r.mia), cov: r.cov === null ? 'Not recorded' : r.cov + ' of 6', ens: r.ens ? bd(r.ens === 'Inconclusive' ? 'Inconclusive' : r.ens, r.ens === 'High' ? 'red' : r.ens === 'Moderate' ? 'amber' : r.ens === 'Low' ? 'green' : 'grey') : null, hasEns: !!r.ens, gov: r.gov === null ? 'Not recorded' : String(r.gov), canOpen: r.canOpen, open: r.open, openLabel: r.openLabel || 'Open audit', flag: r.flag, hasFlag: !!r.flag, date: r.date ? when(r.date) : '—',
     nOverall: r.overall === null, nShapes: r.shapes === null, nTrends: r.trends === null, nCorr: r.corr === null, nRet: r.ret === null, nMia: r.mia === null }));
-  return { filters: { q: f.q, domain: opt('Domain', 'domain', 'All domains'), task: opt('Task', 'task', 'All tasks'), generator: opt('Generator', 'generator', 'All generators'), status: opt('Audit status', 'status', 'All statuses'), source: { opts: [{ id: '', label: 'All sources' }, { id: 'hist', label: 'Historical baseline' }, { id: 'bench', label: 'Benchmark (offline pipeline)' }, { id: 'cur', label: 'Current audits' }, { id: 'demo', label: 'Demo audits' }] }, sort: f.sort, valDomain: f.domain, valTask: f.task, valGen: f.generator, valStatus: f.status, valSource: f.source }, clear: A.clearCmp, charts, rows: trs, count: trs.length, total: rows.length, hasRows: trs.length > 0, histNote: SDA.baseline.note, hasCurrent: S.audits.length > 0 };
+  return { filters: { q: f.q, domain: opt('Domain', 'domain', 'All domains'), task: opt('Task', 'task', 'All tasks'), generator: opt('Generator', 'generator', 'All generators'), status: opt('Audit status', 'status', 'All statuses'), source: { opts: [{ id: '', label: 'All sources' }].concat(TEAM ? [{ id: 'hist', label: 'Historical baseline' }, { id: 'bench', label: 'Study datasets' }] : [{ id: 'bench', label: 'Generated & audited' }]).concat([{ id: 'cur', label: 'Audits' }, { id: 'demo', label: 'Demo audits' }]) }, sort: f.sort, valDomain: f.domain, valTask: f.task, valGen: f.generator, valStatus: f.status, valSource: f.source }, clear: A.clearCmp, charts, rows: trs, count: trs.length, total: rows.length, hasRows: trs.length > 0, histNote: SDA.baseline.note, hasCurrent: S.audits.length > 0 };
 }
 
 /* ───────── Reports ───────── */
@@ -734,13 +778,40 @@ function benchNormalize(j, origin) {
   };
 }
 SDA.benchNormalize = benchNormalize;
+
+/* Merge the four server-run attacks (shadow MIA, singling-out, linkability, attribute inference) into a browser audit. */
+const SRV_MAP = { shadow: 'shadow', single: 'single', link: 'link', infer: 'attr' };
+function mergeServerPrivacy(audit, result, info) {
+  const r = benchNormalize(result, 'imported'); const I = info || {};
+  const P = Object.assign({}, audit.results.privacy); const ids = Object.keys(SRV_MAP).map(k => SRV_MAP[k]);
+  const mia = (P.attacks || []).find(a => a.id === 'mia');
+  const validity = mia && mia.validity ? mia.validity : audit.settings.protocol === 'column' ? 'labelled' : audit.settings.attested ? 'attested' : 'proxy';
+  const setup = (mia && mia.setup ? mia.setup + ' ' : '') + 'Same rows, columns and member / non-member split as the browser tests (' + nf(I.members) + ' members, ' + nf(I.nonMembers) + ' non-members).' + (I.note ? ' ' + I.note : '');
+  const added = r.attacks.filter(a => SRV_MAP[a.id]).map(a => {
+    const cat = SDA.attackCatalogue.find(c => c.id === SRV_MAP[a.id]);
+    const base = { id: cat.id, name: cat.name, short: cat.short, description: cat.description, server: true };
+    if (a.status !== 'Completed') return Object.assign(base, { status: a.status === 'Failed' ? 'Failed' : 'Not Run', error: a.status === 'Failed' ? (a.note || 'The server could not run this test.') : undefined, reason: a.status === 'Failed' ? undefined : (a.note || 'The server skipped this test (too few rows).') });
+    return Object.assign(base, { status: 'Completed', validity, setup, seed: 42, srv: { main: a.main, ci: a.ci, chance: a.chance, above: a.above, dec: a.dec, unit: a.unit },
+      display: a.metrics, rates: a.rates || [], interp: interpOf(a), secretRows: a.secretRows || [],
+      params: Object.assign({ method: a.method || '—' }, a.nAttacks ? { queries: nf(a.nAttacks) + ' attack queries' } : {}, I.columns ? { columns: I.columns + ' columns' } : {}),
+      caveats: (validity === 'proxy' ? ['Membership labels are a proxy (the generator’s training rows are not known), as for the browser tests.'] : []).concat(a.weak ? ['The attack did no better than random guessing, so treat this estimate as unreliable.'] : []) });
+  });
+  P.attacks = (P.attacks || []).filter(a => ids.indexOf(a.id) < 0).concat(added);
+  P.pending = (P.pending || []).filter(p => !added.some(x => x.id === p.id));
+  const ok = P.attacks.filter(a => a.status === 'Completed').length, failed = P.attacks.filter(a => a.status === 'Failed').length;
+  P.completed = ok; P.failed = failed; P.status = ok === 0 ? (failed ? 'Failed' : 'Not Run') : failed ? 'Partial' : 'Completed';
+  P.server = { status: 'completed', finishedAt: new Date().toISOString(), versions: r.versions };
+  const results = Object.assign({}, audit.results, { privacy: P }); results.ensemble = SDA.ensemble.compute(P);
+  return Object.assign({}, audit, { results, status: SDA.auditStatus(results, audit.settings) });
+}
+SDA.mergeServerPrivacy = mergeServerPrivacy;
 function benchShipped() {
   if (SDA._benchShipped) return SDA._benchShipped;
   const out = []; const D = SDA.benchmarkData;
   ((D && D.results) || []).forEach(j => { try { out.push(benchNormalize(j, 'shipped')); } catch (e) { /* skip a malformed bundled record */ } });
   return (SDA._benchShipped = out);
 }
-SDA.benchAll = S => benchShipped().concat(S.benchImported || []);
+SDA.benchAll = S => (TEAM ? benchShipped() : []).concat(S.benchImported || []);
 const PRIM = { f1_macro: 'macro F1', f1_weighted: 'weighted F1', accuracy: 'accuracy', balanced_accuracy: 'balanced accuracy', r2: 'R²', mae: 'MAE', rmse: 'RMSE' };
 const median = a => { const s = a.filter(v => v !== null).sort((p, q) => p - q); if (!s.length) return null; const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 function cellOf(a) {
@@ -775,16 +846,16 @@ function svStatus(V) {
 }
 function svVM(S, A) {
   const V = S.sv, H = V.health, L = H && H.limits ? H.limits : null, F = V.files || {}, J = V.job;
-  const audit = V.mode === 'audit', running = !!(J && (J.status === 'queued' || J.status === 'running'));
+  const audit = false, running = !!(J && (J.status === 'queued' || J.status === 'running'));
   const hdr = F.real && F.real.headers ? F.real.headers : [];
   const opt = (id, label) => ({ id, label });
   const slot = (key, title, need, sub) => { const f = F[key]; return { key, title, need, sub, has: !!f, name: f ? f.name : '', size: f ? bytes(f.size) : '', rows: f && f.rows !== null ? nf(f.rows) + ' rows × ' + f.cols + ' columns' : f ? f.cols + ' columns' : '',
     warn: f && f.warn ? f.warn : '', hasWarn: !!(f && f.warn), inputId: 'sv-' + key, pick: A.svPick(key), remove: A.svRemove(key), label: f ? 'Replace file' : 'Choose file', disabled: running }; };
-  const slots = [slot('real', audit ? 'Real data (training rows)' : 'Real data', true, audit ? 'The rows your generator was trained on, or all real rows with a membership column.' : 'The full real dataset. Nothing is generated from the 20% kept aside.')];
+  const slots = [slot('real', 'Real data', true, '')];
   if (audit) { slots.push(slot('synth', 'Synthetic data', true, 'Must have the same columns as the real data.')); slots.push(slot('hold', 'Holdout rows (optional)', false, 'Real rows the generator never saw. Needed for the privacy attacks and the utility test.')); }
   const problems = [];
-  if (!V.url) problems.push('Set the server address first.');
-  else if (!H) problems.push(V.checking ? 'Checking the server…' : 'The server has not answered yet. Use Check server.');
+  if (!V.url) problems.push('No auditor server is set up for this site.');
+  else if (!H) problems.push(V.checking ? 'Connecting to the server…' : 'The server is not answering yet.');
   if (!F.real) problems.push('Add the real data file.');
   if (audit && !F.synth) problems.push('Add the synthetic data file.');
   if (F.real && !V.target) problems.push('Choose the target column.');
@@ -809,13 +880,14 @@ function svVM(S, A) {
   return {
     url: V.url, urlField: V.urlDraft === null || V.urlDraft === undefined ? V.url : V.urlDraft, saveUrl: A.svSaveUrl, check: A.svCheck, checking: !!V.checking,
     status: svStatus(V), online: !!H, err: V.healthError || '', hasErr: !!V.healthError && !V.checking,
-    limits: L ? [['Largest file', L.max_upload_mb + ' MB'], ['Rows used', 'up to ' + nf(L.max_rows) + ' (larger tables are sampled, seeded)'], ['Columns', 'up to ' + L.max_columns], ['Jobs', L.jobs_per_hour + ' per hour per visitor; ' + L.job_timeout_minutes + '-minute limit'], ['Results kept', L.result_kept_minutes + ' minutes on the server, then only in this browser']].map(x => ({ k: x[0], v: x[1] })) : [],
+    limits: L ? [['Largest file', L.max_upload_mb + ' MB'], ['Rows used', 'up to ' + nf(L.max_rows) + ' (larger tables are sampled, seeded)'], ['Columns', 'up to ' + L.max_columns], ['Jobs', L.jobs_per_hour + ' per hour per visitor; ' + L.job_timeout_minutes + '-minute limit'], ['Results kept', 'in Past audits until you delete them']].map(x => ({ k: x[0], v: x[1] })) : [],
     policy: H ? H.data_policy : '', versions: H && H.versions ? Object.keys(H.versions).map(k => k + ' ' + (H.versions[k] || '?')).join(' · ') : '', queue: H && H.queue ? H.queue.running + ' running · ' + H.queue.queued + ' waiting' : '',
     noUrl: !V.url, modes: SV_MODES.map(m => ({ label: m.label, desc: m.desc, cls: 'mode' + (V.mode === m.id ? ' on' : ''), pick: A.svMode(m.id) })), audit, gen: !audit,
     slots, targets: [opt('', hdr.length ? 'Choose…' : 'Add the real file first')].concat(hdr.map(h => opt(h, h))), target: V.target, task: V.task, taskHint: V.taskHint || '',
     gens: SV_GENS, generator: V.generator, name: V.name, sensOpts, hasSens: sensOpts.length > 0, memOpts: [opt('', 'None')].concat(hdr.filter(h => h !== V.target).map(h => opt(h, h))), memCol: V.memCol,
     noHold, problems, hasProblems: problems.length > 0, canSubmit: !problems.length && !running && !V.submitting, submit: A.svSubmit, submitting: !!V.submitting,
-    submitLabel: V.submitting ? 'Uploading…' : audit ? 'Upload and run the full audit' : 'Upload, generate and run the full audit', job, locked: running
+    submitLabel: V.submitting ? 'Uploading…' : 'Generate and audit', job, locked: running,
+    showUrl: TEAM || !(SDA.config && SDA.config.backendUrl), showOffline: !!V.url && !H && !V.checking && !!V.healthError
   };
 }
 function bnVM(S, A) {
@@ -845,7 +917,7 @@ function bnVM(S, A) {
   return { has: all.length > 0, kpis, sum, rows, count: rows.length, total: all.length, noRows: rows.length === 0, heads: BN_ATTACKS.map(d => d.short),
     note: 'Computed offline on ' + (D.generated || 'an unrecorded date') + ' by the Python pipeline (' + (D.pipeline || 'sda_pipeline.py') + ' · SDV GaussianCopula, SDMetrics, scikit-learn, Anonymeter), then bundled with this site. Nothing here was computed in this browser, and no data rows are included.',
     filters: { q: f.q || '', group: f.group || '', task: f.task || '', sig: f.sig || '', sort: f.sort || 'name', groups: [{ id: '', label: 'All datasets' }, { id: 'Project dataset', label: 'Project datasets (11)' }, { id: 'New UCI dataset', label: 'New UCI datasets (30)' }, { id: 'Imported', label: 'Imported or run on the server' }], sorts: [{ id: 'name', label: 'Name' }, { id: 'sig', label: 'Most signals first' }, { id: 'fid', label: 'Fidelity (lowest first)' }, { id: 'ret', label: 'Utility retention (lowest first)' }].concat(BN_ATTACKS.map(d => ({ id: d.id, label: d.short + ' (highest first)' }))) },
-    clear: A.bnClear, imp, hasImp: imp.length > 0, impCount: imp.length, removeAll: A.bnRemoveAll, pick: A.bnImport, dl: A.bnCsv, detail: sel ? bnDetail(sel, A) : null, hasDetail: !!sel };
+    team: TEAM, goPast: A.go('history'), clear: A.bnClear, imp, hasImp: imp.length > 0, impCount: imp.length, removeAll: A.bnRemoveAll, pick: A.bnImport, dl: A.bnCsv, detail: sel ? bnDetail(sel, A) : null, hasDetail: !!sel };
 }
 function bnDetail(r, A) {
   const U = r.util, F = r.fid; const reg = r.task === 'regression';
@@ -853,7 +925,7 @@ function bnDetail(r, A) {
   const cards = r.attacks.map(a => { const def = BN_ATTACKS.find(d => d.id === a.id); const done = a.status === 'Completed';
     return { name: def.name, what: def.what, lim: def.lim, bd: bd(done ? (a.above ? 'Above chance' : 'Consistent with chance') : a.status, done ? (a.above ? 'amber' : 'grey') : a.status === 'Failed' ? 'red' : 'grey', done ? (a.above ? 'alert' : 'dash') : a.status === 'Failed' ? 'x' : 'dash'),
       done, msg: done ? '' : (a.note || (a.status === 'Skipped' ? 'Skipped by the pipeline.' : 'No result recorded.')), metrics: a.metrics, rates: a.rates, hasRates: a.rates.length > 0, nAttacks: a.nAttacks ? nf(a.nAttacks) + ' attack queries' : '', interp: done ? interpOf(a) : '', method: a.method || '—', isInfer: a.id === 'infer' && a.secrets.length > 0, secrets: a.secretRows || [], cls: done ? 'card' : 'card card-pend' }; });
-  return { name: r.name, group: r.viaServer ? 'Full audit on the auditor server' : r.group, isImp: r.origin === 'imported', uciUrl: r.uci ? 'https://archive.ics.uci.edu/dataset/' + r.uci : '', hasUci: !!r.uci, uci: r.uci ? 'UCI ' + r.uci : '', close: A.bnClose,
+  return { backLabel: TEAM ? 'All datasets' : 'Past audits', name: r.name, group: r.viaServer ? 'Generated and audited on the auditor server' : r.group, isImp: r.origin === 'imported', uciUrl: r.uci ? 'https://archive.ics.uci.edu/dataset/' + r.uci : '', hasUci: !!r.uci, uci: r.uci ? 'UCI ' + r.uci : '', close: TEAM ? A.bnClose : A.go('history'),
     facts: [['Target / task', (r.target || 'not recorded') + ' · ' + r.task], ['Rows after cleaning', nf(r.rows) + (r.nCols !== null ? ' rows · ' + r.nCols + ' columns' : '')], ['Split', r.split || 'not recorded'], ['Training / holdout rows', nf(r.members) + ' / ' + nf(r.holdout)], ['Generator', r.generator], ['Software', r.versions], ['Real-data fingerprint (SHA-256)', r.sha ? r.sha.slice(0, 16) + '…' : 'not recorded'], ['Pipeline run time', r.seconds === null ? 'not recorded' : fmt(r.seconds, 1) + ' s']].map(x => ({ k: x[0], v: x[1] })),
     fid: { ok: F.status === 'Completed', status: F.status, stats: [{ k: 'Overall Quality', v: fmt(F.overall), sub: 'mean of shapes and pair trends' }, { k: 'Column Shapes', v: fmt(F.shapes), sub: 'per-column distributions' }, { k: 'Column Pair Trends', v: fmt(F.trends), sub: 'pairwise relationships' }, { k: 'Correlation difference', v: fmt(F.corr), sub: 'mean |Δr| · lower is better' }], weakest: F.weakest, hasWeak: F.weakest.length > 0, engine: F.engine || 'not recorded' },
     util: { ok: U.status === 'Completed', status: U.status, rows: um, ret: U.retention === null ? 'N/A' : fmtPct(U.retention, 1), prim: PRIM[U.primary] || U.primary || 'not recorded', model: U.model || 'not recorded', split: nf(U.trainReal) + ' real / ' + nf(U.trainSyn) + ' synthetic training rows · ' + nf(U.testReal) + ' real test rows (' + (U.testSet || 'holdout') + ')', majority: !reg && U.majority !== null ? fmtPct(U.majority * 100, 1) : '', hasMaj: !reg && U.majority !== null, negR2: reg && U.metrics.some(m => m.k === 'r2' && m.trtr !== null && m.trtr < 0) },
